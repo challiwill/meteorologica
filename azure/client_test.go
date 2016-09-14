@@ -18,29 +18,31 @@ var _ = Describe("Azure", func() {
 
 	BeforeEach(func() {
 		azureServer = ghttp.NewServer()
-		client = azure.NewClient(azureServer.URL())
+		client = azure.NewClient(azureServer.URL(), "some-key", 1337)
 	})
 
 	AfterEach(func() {
 		azureServer.Close()
 	})
 
-	Describe("Resources", func() {
+	Describe("UsageReports", func() {
 		var (
-			resources azure.Resources
-			err       error
+			usageReports azure.UsageReports
+			err          error
 		)
 
 		JustBeforeEach(func() {
-			resources, err = client.Resources()
+			usageReports, err = client.UsageReports()
 		})
 
-		Context("When azure returns resources", func() {
+		Context("When azure returns usage list", func() {
 			BeforeEach(func() {
 				azureServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/subscriptions/"),
-						ghttp.RespondWith(http.StatusOK, resourceJSON),
+						ghttp.VerifyRequest("GET", "/rest/1337/usage-reports"),
+						ghttp.VerifyHeaderKV("authorization", "some-key"),
+						ghttp.VerifyHeaderKV("api-version", "1.0"),
+						ghttp.RespondWith(http.StatusOK, availableMonthsResponse),
 					),
 				)
 			})
@@ -54,53 +56,28 @@ var _ = Describe("Azure", func() {
 			})
 
 			It("returns resources", func() {
-				Expect(resources.Resources).To(HaveLen(2))
+				Expect(usageReports.Months).To(HaveLen(2))
 			})
 		})
 	})
 })
 
-var resourceJSON = `
+var availableMonthsResponse = `
 {
-  "value": [
+	"object_type" : "Usage",
+	"contract_version" : "1.0",
+	"AvailableMonths":
+	[
 		{
-      "id": "/subscriptions/d657c399-e17c-405d-859e-9f2efb6462e5/providers/Microsoft.Commerce/UsageAggregates/Daily_BRSDT_20150515_0000",
-      "name": "Daily_BRSDT_20150515_0000",
-      "type": "Microsoft.Commerce/UsageAggregate",
-      "properties": {
-        "subscriptionId": "d657c399-e17c-405d-859e-9f2efb6462e5",
-        "usageStartTime": "2015-05-15T00:00:00+00:00",
-        "usageEndTime": "2015-05-16T00:00:00+00:00",
-        "instanceData": "{\"Microsoft.Resources\":{\"resourceUri\":\"/subscriptions/d657c399-e17c-405d-859e-9f2efb6462e5/resourceGroups/moinakrg/providers/Microsoft.Storage/storageAccounts/moinakstorage\",\"location\":\"West US\",\"tags\":{\"department\":\"hr\"}}}",
-        "meterName": "Storage Transactions (in 10,000s)",
-        "meterCategory": "Data Management",
-        "unit": "10,000s",
-        "meterId": "964c283a-83a3-4dd4-8baf-59511998fe8b",
-        "infoFields": {
-
-        },
-        "quantity": 9.8390
-      }
-    },
-    {
-      "id": "/subscriptions/d657c399-e17c-405d-859e-9f2efb6462e5/providers/Microsoft.Commerce/UsageAggregates/Daily_BRSDT_20150515_0000",
-      "name": "Daily_BRSDT_20150515_0000",
-      "type": "Microsoft.Commerce/UsageAggregate",
-      "properties": {
-        "subscriptionId": "d657c399-e17c-405d-859e-9f2efb6462e5",
-        "usageStartTime": "2015-05-15T00:00:00+00:00",
-        "usageEndTime": "2015-05-16T00:00:00+00:00",
-        "instanceData": "{\"Microsoft.Resources\":{\"resourceUri\":\"/subscriptions/d657c399-e17c-405d-859e-9f2efb6462e5/resourceGroups/moinakrg/providers/Microsoft.Storage/storageAccounts/moinakstorage\",\"location\":\"West US\",\"tags\":{\"department\":\"hr\"}}}",
-        "meterName": "Data Transfer In (GB)",
-        "meterRegion": "Zone 1",
-        "meterCategory": "Networking",
-        "unit": "GB",
-        "meterId": "32c3ebec-1646-49e3-8127-2cafbd3a04d8",
-        "infoFields": {
-
-        },
-        "quantity": 0.000066
-      }
-    }
-	]}
+			"Month":"2014-02",
+			"LinkToDownloadSummaryReport":"/rest/100100/usagereport?month=2014-02&type=summary",
+			"LinkToDownloadDetailReport":"/rest/100100/usagereport?month=2014-02&type=detail"
+		}
+		,{
+			"Month":"2014-03",
+			"LinkToDownloadSummaryReport":"/rest/100100/usagereport?month=2014-03&type=summary",
+			"LinkToDownloadDetailReport":"/rest/100100/usage-report?month=2014-03&type=detail"
+		}
+	]
+}
 `
