@@ -2,9 +2,9 @@ package azure
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
@@ -22,10 +22,10 @@ type Client struct {
 	URL        string
 	client     *http.Client
 	accessKey  string
-	enrollment int
+	enrollment string
 }
 
-func NewClient(serverURL, key string, enrollment int) *Client {
+func NewClient(serverURL, key, enrollment string) *Client {
 	return &Client{
 		URL:        serverURL,
 		client:     new(http.Client),
@@ -35,11 +35,11 @@ func NewClient(serverURL, key string, enrollment int) *Client {
 }
 
 func (c Client) UsageReports() (UsageReports, error) {
-	req, err := http.NewRequest("GET", strings.Join([]string{c.URL, "rest", strconv.Itoa(c.enrollment), "usage-reports"}, "/"), nil)
+	req, err := http.NewRequest("GET", strings.Join([]string{c.URL, "rest", c.enrollment, "usage-reports"}, "/"), nil)
 	if err != nil {
 		return UsageReports{}, err
 	}
-	req.Header.Add("authorization", c.accessKey)
+	req.Header.Add("authorization", "bearer "+c.accessKey)
 	req.Header.Add("api-version", "1.0")
 
 	resp, err := c.client.Do(req)
@@ -47,7 +47,7 @@ func (c Client) UsageReports() (UsageReports, error) {
 		return UsageReports{}, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return UsageReports{}, nil
+		return UsageReports{}, fmt.Errorf("NOT OKAY: %s", resp.Status)
 	}
 	defer resp.Body.Close()
 

@@ -18,7 +18,7 @@ var _ = Describe("Azure", func() {
 
 	BeforeEach(func() {
 		azureServer = ghttp.NewServer()
-		client = azure.NewClient(azureServer.URL(), "some-key", 1337)
+		client = azure.NewClient(azureServer.URL(), "some-key", "1337")
 	})
 
 	AfterEach(func() {
@@ -40,7 +40,7 @@ var _ = Describe("Azure", func() {
 				azureServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("GET", "/rest/1337/usage-reports"),
-						ghttp.VerifyHeaderKV("authorization", "some-key"),
+						ghttp.VerifyHeaderKV("authorization", "bearer some-key"),
 						ghttp.VerifyHeaderKV("api-version", "1.0"),
 						ghttp.RespondWith(http.StatusOK, availableMonthsResponse),
 					),
