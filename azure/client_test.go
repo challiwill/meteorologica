@@ -60,6 +60,42 @@ var _ = Describe("Azure", func() {
 			})
 		})
 	})
+
+	Describe("MonthlyUsageReport", func() {
+		var (
+			monthlyUsageReport azure.DetailedUsageReport
+			err                error
+		)
+
+		JustBeforeEach(func() {
+			monthlyUsageReport, err = client.MonthlyUsageReport()
+		})
+
+		Context("When azure returns valid data", func() {
+			BeforeEach(func() {
+				azureServer.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("GET", "/rest/1337/usage-report", "type=detail"),
+						ghttp.VerifyHeaderKV("authorization", "bearer some-key"),
+						ghttp.VerifyHeaderKV("api-version", "1.0"),
+						ghttp.RespondWith(http.StatusOK, monthlyUsageResponse),
+					),
+				)
+			})
+
+			It("does not error", func() {
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("makes a GET request to azure", func() {
+				Expect(azureServer.ReceivedRequests()).To(HaveLen(1))
+			})
+
+			It("returns monthly usage report", func() {
+				Expect(monthlyUsageReport).To(Equal(azure.DetailedUsageReport{CSV: monthlyUsageResponse}))
+			})
+		})
+	})
 })
 
 var availableMonthsResponse = `
@@ -80,4 +116,9 @@ var availableMonthsResponse = `
 		}
 	]
 }
+`
+
+var monthlyUsageResponse = `
+sometimes, you, might, think, you, want json
+but really, we, know, you, want, CSV
 `

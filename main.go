@@ -9,11 +9,11 @@ import (
 
 func main() {
 	azureClient := azure.NewClient("https://ea.azure.com/", os.Getenv("AZURE_ACCESS_KEY"), os.Getenv("AZURE_ENROLLMENT_NUMBER"))
-	ur, err := azureClient.UsageReports()
+	mu, err := azureClient.MonthlyUsageReport()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	fmt.Printf("Success: %#v\n", ur)
+	fmt.Printf("Got Monthly Azure Usage: %#v\n", mu)
 	os.Exit(0)
 }

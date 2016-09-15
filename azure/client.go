@@ -18,6 +18,10 @@ type UsageReports struct {
 	Months          []UsageReport `json:"AvailableMonths"`
 }
 
+type DetailedUsageReport struct {
+	CSV string
+}
+
 type Client struct {
 	URL        string
 	client     *http.Client
@@ -56,10 +60,41 @@ func (c Client) UsageReports() (UsageReports, error) {
 		return UsageReports{}, err
 	}
 
-	usageReporst := &UsageReports{}
-	err = json.Unmarshal(body, usageReporst)
+	usageReports := &UsageReports{}
+	err = json.Unmarshal(body, usageReports)
 	if err != nil {
 		return UsageReports{}, err
 	}
-	return *usageReporst, nil
+	return *usageReports, nil
+}
+
+func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
+	req, err := http.NewRequest("GET", strings.Join([]string{c.URL, "rest", c.enrollment, "usage-report?type=detail"}, "/"), nil)
+	if err != nil {
+		return DetailedUsageReport{}, err
+	}
+	req.Header.Add("authorization", "bearer "+c.accessKey)
+	req.Header.Add("api-version", "1.0")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return DetailedUsageReport{}, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return DetailedUsageReport{}, fmt.Errorf("NOT OKAY: %s", resp.Status)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return DetailedUsageReport{}, err
+	}
+
+	// usageReport := &DetailedUsageReport{}
+	//body is CSV
+	// err = json.Unmarshal(body, usageReport)
+	// if err != nil {
+	// 	return DetailedUsageReport{}, err
+	// }
+	return DetailedUsageReport{CSV: string(body)}, nil
 }
