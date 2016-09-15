@@ -14,6 +14,6 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	fmt.Printf("Got Monthly Azure Usage: %#v\n", mu)
+	fmt.Printf("Got Monthly Azure Usage: %s\n", mu.CSV)
 	os.Exit(0)
 }
