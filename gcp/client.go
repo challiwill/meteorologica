@@ -1,6 +1,7 @@
 package gcp
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -51,21 +52,29 @@ func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
 	monthlyUsageReport := DetailedUsageReport{}
 
 	for i := 1; i < time.Now().Day(); i++ {
-		resp, err := c.StorageService.DailyUsage(c.BucketName, dailyBillingFileName(i))
+		dailyUsage, err := c.DailyUsageReport(i)
 		if err != nil {
-			return DetailedUsageReport{}, err
+			fmt.Println(err.Error())
+			continue
 		}
-		defer resp.Body.Close()
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return DetailedUsageReport{}, err
-		}
-
-		monthlyUsageReport.DailyUsage = append(monthlyUsageReport.DailyUsage, DailyUsageReport{CSV: string(body)})
+		monthlyUsageReport.DailyUsage = append(monthlyUsageReport.DailyUsage, dailyUsage)
 	}
 	return monthlyUsageReport, nil
 
+}
+
+func (c Client) DailyUsageReport(day int) (DailyUsageReport, error) {
+	resp, err := c.StorageService.DailyUsage(c.BucketName, dailyBillingFileName(day))
+	if err != nil {
+		return DailyUsageReport{}, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return DailyUsageReport{}, err
+	}
+	return DailyUsageReport{CSV: string(body)}, nil
 }
 
 func dailyBillingFileName(day int) string {
