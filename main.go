@@ -19,7 +19,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	gcpClient, err := gcp.NewClient(gcpCredentials)
+	gcpClient, err := gcp.NewClient(gcpCredentials, os.Getenv("GCP_BUCKET_NAME"))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

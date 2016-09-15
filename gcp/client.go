@@ -29,9 +29,10 @@ type DailyUsageReport struct {
 
 type Client struct {
 	StorageService StorageService
+	BucketName     string
 }
 
-func NewClient(jsonCredentials []byte) (*Client, error) {
+func NewClient(jsonCredentials []byte, bucketName string) (*Client, error) {
 	jwtConfig, err := google.JWTConfigFromJSON(jsonCredentials, "https://www.googleapis.com/auth/devstorage.read_only")
 	if err != nil {
 		return nil, err
@@ -42,6 +43,7 @@ func NewClient(jsonCredentials []byte) (*Client, error) {
 	}
 	return &Client{
 		StorageService: &storageService{service: service},
+		BucketName:     bucketName,
 	}, nil
 }
 
@@ -49,7 +51,7 @@ func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
 	monthlyUsageReport := DetailedUsageReport{}
 
 	for i := 1; i < time.Now().Day(); i++ {
-		resp, err := c.StorageService.DailyUsage("pivotal_billing", dailyBillingFileName(i))
+		resp, err := c.StorageService.DailyUsage(c.BucketName, dailyBillingFileName(i))
 		if err != nil {
 			return DetailedUsageReport{}, err
 		}
