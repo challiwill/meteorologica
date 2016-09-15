@@ -35,7 +35,10 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("Got Monthly GCP Usage: %s\n", gcpMonthlyUsage)
+	fmt.Println("Got Monthly GCP Usage:")
+	for _, usage := range gcpMonthlyUsage.DailyUsage {
+		fmt.Println(usage.CSV)
+	}
 
 	os.Exit(0)
 }

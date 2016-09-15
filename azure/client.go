@@ -90,11 +90,5 @@ func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
 		return DetailedUsageReport{}, err
 	}
 
-	// usageReport := &DetailedUsageReport{}
-	//body is CSV
-	// err = json.Unmarshal(body, usageReport)
-	// if err != nil {
-	// 	return DetailedUsageReport{}, err
-	// }
 	return DetailedUsageReport{CSV: string(body)}, nil
 }

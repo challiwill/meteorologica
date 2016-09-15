@@ -3,7 +3,6 @@ package gcp_test
 import (
 	"github.com/challiwill/meteorologica/gcp"
 	"github.com/challiwill/meteorologica/gcp/gcpfakes"
-	storage "google.golang.org/api/storage/v1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,13 +31,16 @@ var _ = Describe("Gcp", func() {
 			usageReport, err = client.MonthlyUsageReport()
 		})
 
-		Context("when gcp returns buckets", func() {
+		XContext("when gcp returns the bucket", func() {
 			BeforeEach(func() {
-				service.BucketsReturns(&storage.Buckets{}, nil)
 			})
 
-			It("works", func() {
+			It("does not error", func() {
 				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns the buckets contents", func() {
+				Expect(usageReport).NotTo(BeEmpty())
 			})
 		})
 	})

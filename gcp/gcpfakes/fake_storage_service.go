@@ -2,57 +2,58 @@
 package gcpfakes
 
 import (
+	"net/http"
 	"sync"
-
-	"google.golang.org/api/storage/v1"
 
 	"github.com/challiwill/meteorologica/gcp"
 )
 
 type FakeStorageService struct {
-	BucketsStub        func(string) (*storage.Buckets, error)
-	bucketsMutex       sync.RWMutex
-	bucketsArgsForCall []struct {
+	DailyUsageStub        func(string, string) (*http.Response, error)
+	dailyUsageMutex       sync.RWMutex
+	dailyUsageArgsForCall []struct {
 		arg1 string
+		arg2 string
 	}
-	bucketsReturns struct {
-		result1 *storage.Buckets
+	dailyUsageReturns struct {
+		result1 *http.Response
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeStorageService) Buckets(arg1 string) (*storage.Buckets, error) {
-	fake.bucketsMutex.Lock()
-	fake.bucketsArgsForCall = append(fake.bucketsArgsForCall, struct {
+func (fake *FakeStorageService) DailyUsage(arg1 string, arg2 string) (*http.Response, error) {
+	fake.dailyUsageMutex.Lock()
+	fake.dailyUsageArgsForCall = append(fake.dailyUsageArgsForCall, struct {
 		arg1 string
-	}{arg1})
-	fake.recordInvocation("Buckets", []interface{}{arg1})
-	fake.bucketsMutex.Unlock()
-	if fake.BucketsStub != nil {
-		return fake.BucketsStub(arg1)
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("DailyUsage", []interface{}{arg1, arg2})
+	fake.dailyUsageMutex.Unlock()
+	if fake.DailyUsageStub != nil {
+		return fake.DailyUsageStub(arg1, arg2)
 	} else {
-		return fake.bucketsReturns.result1, fake.bucketsReturns.result2
+		return fake.dailyUsageReturns.result1, fake.dailyUsageReturns.result2
 	}
 }
 
-func (fake *FakeStorageService) BucketsCallCount() int {
-	fake.bucketsMutex.RLock()
-	defer fake.bucketsMutex.RUnlock()
-	return len(fake.bucketsArgsForCall)
+func (fake *FakeStorageService) DailyUsageCallCount() int {
+	fake.dailyUsageMutex.RLock()
+	defer fake.dailyUsageMutex.RUnlock()
+	return len(fake.dailyUsageArgsForCall)
 }
 
-func (fake *FakeStorageService) BucketsArgsForCall(i int) string {
-	fake.bucketsMutex.RLock()
-	defer fake.bucketsMutex.RUnlock()
-	return fake.bucketsArgsForCall[i].arg1
+func (fake *FakeStorageService) DailyUsageArgsForCall(i int) (string, string) {
+	fake.dailyUsageMutex.RLock()
+	defer fake.dailyUsageMutex.RUnlock()
+	return fake.dailyUsageArgsForCall[i].arg1, fake.dailyUsageArgsForCall[i].arg2
 }
 
-func (fake *FakeStorageService) BucketsReturns(result1 *storage.Buckets, result2 error) {
-	fake.BucketsStub = nil
-	fake.bucketsReturns = struct {
-		result1 *storage.Buckets
+func (fake *FakeStorageService) DailyUsageReturns(result1 *http.Response, result2 error) {
+	fake.DailyUsageStub = nil
+	fake.dailyUsageReturns = struct {
+		result1 *http.Response
 		result2 error
 	}{result1, result2}
 }
@@ -60,8 +61,8 @@ func (fake *FakeStorageService) BucketsReturns(result1 *storage.Buckets, result2
 func (fake *FakeStorageService) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.bucketsMutex.RLock()
-	defer fake.bucketsMutex.RUnlock()
+	fake.dailyUsageMutex.RLock()
+	defer fake.dailyUsageMutex.RUnlock()
 	return fake.invocations
 }
 
