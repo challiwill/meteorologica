@@ -9,7 +9,7 @@ You need to generate and download a
 [service_account_credential](https://cloud.google.com/storage/docs/authentication#service_accounts).
 Provide a path to the file as an environment variable.
 
-Also provide the bucket that holds the billing files. Files are assumed to have the format `Billing-YYYY-MM-DD.csv`.
+You must provide the bucket that holds the billing files. Files are assumed to have the format `Billing-YYYY-MM-DD.csv`.
 
 ```
 GOOGLE_APPLICATION_CREDENTIALS=./path/to/service_account_credential.json
