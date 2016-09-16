@@ -92,7 +92,7 @@ var _ = Describe("Azure", func() {
 			})
 
 			It("returns monthly usage report", func() {
-				Expect(monthlyUsageReport).To(Equal(azure.DetailedUsageReport{CSV: monthlyUsageResponse}))
+				Expect(monthlyUsageReport).To(Equal(azure.DetailedUsageReport{CSV: []byte(monthlyUsageResponse)}))
 			})
 		})
 	})

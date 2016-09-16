@@ -19,7 +19,7 @@ type UsageReports struct {
 }
 
 type DetailedUsageReport struct {
-	CSV string
+	CSV []byte
 }
 
 type Client struct {
@@ -90,5 +90,5 @@ func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
 		return DetailedUsageReport{}, err
 	}
 
-	return DetailedUsageReport{CSV: string(body)}, nil
+	return DetailedUsageReport{CSV: body}, nil
 }

@@ -25,7 +25,7 @@ type DetailedUsageReport struct {
 }
 
 type DailyUsageReport struct {
-	CSV string
+	CSV []byte
 }
 
 type Client struct {
@@ -74,7 +74,7 @@ func (c Client) DailyUsageReport(day int) (DailyUsageReport, error) {
 	if err != nil {
 		return DailyUsageReport{}, err
 	}
-	return DailyUsageReport{CSV: string(body)}, nil
+	return DailyUsageReport{CSV: body}, nil
 }
 
 func dailyBillingFileName(day int) string {
