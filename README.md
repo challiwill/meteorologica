@@ -17,6 +17,15 @@ GCP_BUCKET_NAME=my-bucket
 ```
 
 ###AWS:
+You need to provide credentials and configuration options. The master account number is the account number for the billing management account.
+
+```
+export AWS_REGION=us-east-1
+export AWS_MASTER_ACCOUNT_NUMBER=12345
+export AWS_BUCKET_NAME=bucket-name
+export AWS_ACCESS_KEY_ID=acess-key-id
+export AWS_SECRET_ACCESS_KEY=secret-access-key
+```
 
 
 ###Azure:
