@@ -15,8 +15,10 @@ import (
 type Client interface{}
 
 func main() {
+	// AZURE CLIENT
 	azureClient := azure.NewClient("https://ea.azure.com/", os.Getenv("AZURE_ACCESS_KEY"), os.Getenv("AZURE_ENROLLMENT_NUMBER"))
 
+	// GCP CLIENT
 	gcpCredentials, err := ioutil.ReadFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
 	if err != nil {
 		fmt.Println("Failed to create GCP credentials: ", err)
@@ -28,6 +30,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// AWS CLIENT
 	sess, err := session.NewSession(&awssdk.Config{
 		Region: awssdk.String(os.Getenv("AWS_REGION")),
 	})
@@ -37,26 +40,30 @@ func main() {
 	}
 	awsClient := aws.NewClient(os.Getenv("AWS_BUCKET_NAME"), os.Getenv("AWS_MASTER_ACCOUNT_NUMBER"), sess)
 
+	// GET USAGES
 	azureMonthlyusage, err := azureClient.MonthlyUsageReport()
 	if err != nil {
 		fmt.Println("Failed to get Azure monthly usage: ", err)
+	} else {
+		fmt.Printf("Got Monthly Azure Usage: %s\n", string(azureMonthlyusage.CSV))
 	}
-	fmt.Printf("Got Monthly Azure Usage: %s\n", azureMonthlyusage.CSV)
 
 	gcpMonthlyUsage, err := gcpClient.MonthlyUsageReport()
 	if err != nil {
 		fmt.Println("Failed to get GCP monthly usage: ", err)
-	}
-	fmt.Println("Got Monthly GCP Usage:")
-	for _, usage := range gcpMonthlyUsage.DailyUsage {
-		fmt.Println(usage.CSV)
+	} else {
+		fmt.Println("Got Monthly GCP Usage:")
+		for _, usage := range gcpMonthlyUsage.DailyUsage {
+			fmt.Println(string(usage.CSV))
+		}
 	}
 
 	awsMonthlyusage, err := awsClient.MonthlyUsageReport()
 	if err != nil {
 		fmt.Println("Failed to get AWS monthly usage: ", err)
+	} else {
+		fmt.Printf("Got Monthly AWS Usage: %s\n", string(awsMonthlyusage.CSV))
 	}
-	fmt.Printf("Got Monthly AWS Usage: %s\n", awsMonthlyusage.CSV)
 
 	os.Exit(0)
 }

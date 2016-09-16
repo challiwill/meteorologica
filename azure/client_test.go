@@ -25,42 +25,6 @@ var _ = Describe("Azure", func() {
 		azureServer.Close()
 	})
 
-	Describe("UsageReports", func() {
-		var (
-			usageReports azure.UsageReports
-			err          error
-		)
-
-		JustBeforeEach(func() {
-			usageReports, err = client.UsageReports()
-		})
-
-		Context("When azure returns usage list", func() {
-			BeforeEach(func() {
-				azureServer.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/rest/1337/usage-reports"),
-						ghttp.VerifyHeaderKV("authorization", "bearer some-key"),
-						ghttp.VerifyHeaderKV("api-version", "1.0"),
-						ghttp.RespondWith(http.StatusOK, availableMonthsResponse),
-					),
-				)
-			})
-
-			It("does not error", func() {
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("makes a GET request to azure", func() {
-				Expect(azureServer.ReceivedRequests()).To(HaveLen(1))
-			})
-
-			It("returns resources", func() {
-				Expect(usageReports.Months).To(HaveLen(2))
-			})
-		})
-	})
-
 	Describe("MonthlyUsageReport", func() {
 		var (
 			monthlyUsageReport azure.DetailedUsageReport
