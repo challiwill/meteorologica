@@ -41,6 +41,7 @@ func main() {
 	awsClient := aws.NewClient(os.Getenv("AWS_BUCKET_NAME"), os.Getenv("AWS_MASTER_ACCOUNT_NUMBER"), sess)
 
 	// GET USAGES
+	fmt.Println("Getting Monthly Azure Usage...")
 	azureMonthlyusage, err := azureClient.MonthlyUsageReport()
 	if err != nil {
 		fmt.Println("Failed to get Azure monthly usage: ", err)
@@ -48,6 +49,7 @@ func main() {
 		fmt.Printf("Got Monthly Azure Usage: %s\n", string(azureMonthlyusage.CSV))
 	}
 
+	fmt.Println("Getting Monthly GCP Usage...")
 	gcpMonthlyUsage, err := gcpClient.MonthlyUsageReport()
 	if err != nil {
 		fmt.Println("Failed to get GCP monthly usage: ", err)
@@ -58,6 +60,7 @@ func main() {
 		}
 	}
 
+	fmt.Println("Getting Monthly AWS Usage...")
 	awsMonthlyusage, err := awsClient.MonthlyUsageReport()
 	if err != nil {
 		fmt.Println("Failed to get AWS monthly usage: ", err)
