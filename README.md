@@ -2,6 +2,17 @@ Tool to collect and standardize billing information from multiple IAAS's.
 
 Right now Google Cloud Platform, Amazon Web Services, and Microsoft Azure.
 
+## Use
+You can use this tool to collect billing info from all your IAAS's just by running the file:
+```
+go run main.go
+```
+
+It also accepts flags to collect billing data from only one (or more) IAAS: 
+```
+go run main.go -aws -azure
+```
+
 ##Environment Needed:
 
 ###GCP:
