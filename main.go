@@ -5,9 +5,13 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
+	"strings"
+	"time"
 
+	"github.com/Sirupsen/logrus"
 	awssdk "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/challiwill/meteorologica/aws"
@@ -30,131 +34,156 @@ func main() {
 	getAWS := *awsFlag
 	getAll := !getAzure && !getGCP && !getAWS
 
-	normalizedFile, err := os.Create("normalized_iaas_billing_data.csv")
-	if err != nil {
-		fmt.Println("Failed to create normalized file: ", err.Error())
-		os.Exit(1)
-	}
+	log := logrus.New()
+	log.Out = os.Stderr
 
-	// AZURE CLIENT
-	if getAzure || getAll {
-		normalizedAzure, err := getAzureUsage()
-		if err != nil {
-			fmt.Println("Failed to get Azure usage data: ", err.Error())
-		} else {
-			err = gocsv.MarshalFile(&normalizedAzure, normalizedFile)
-			if err != nil {
-				fmt.Println("Failed to write normalized Azure data to file: ", err.Error())
-			} else {
-				fmt.Println("Wrote normalized Azure data to ", normalizedFile.Name())
-			}
-		}
-	}
+	// HEALTHCHECK
+	go func() {
+		http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, "Meteorologica is deployed.")
+		})
+		log.Fatal(http.ListenAndServe(":8080", nil))
+	}()
 
-	// GCP CLIENT
-	if getGCP || getAll {
-		normalizedGCP, err := getGCPUsage()
-		if err != nil {
-			fmt.Println(err.Error())
-		} else {
-			err = gocsv.MarshalFile(&normalizedGCP, normalizedFile)
+	// BILLING DATA
+	go func() {
+		t := time.NewTicker(24 * time.Hour)
+		for tick := range t.C {
+			log.Info("Running periodic job at %s ...\n", tick.String())
+			normalizedFileName := strings.Join([]string{
+				strconv.Itoa(time.Now().Year()),
+				time.Now().Month().String(),
+				strconv.Itoa(time.Now().Day()),
+				"normalized-billing-data.csv",
+			}, "-")
+			normalizedFile, err := os.Create(normalizedFileName)
 			if err != nil {
-				fmt.Println("Failed to write normalized GCP data to file: ", err.Error())
-			} else {
-				fmt.Println("Wrote normalized GCP data to ", normalizedFile.Name())
+				log.Fatal("Failed to create normalized file: ", err.Error())
 			}
-		}
-	}
 
-	// AWS CLIENT
-	if getAWS || getAll {
-		normalizedAWS, err := getAWSUsage()
-		if err != nil {
-			fmt.Println(err.Error())
-		} else {
-			err = gocsv.MarshalFile(&normalizedAWS, normalizedFile)
-			if err != nil {
-				fmt.Println("Failed to write normalized AWS data to file: ", err.Error())
-			} else {
-				fmt.Println("Wrote normalized AWS data to ", normalizedFile.Name())
+			// AZURE CLIENT
+			if getAzure || getAll {
+				normalizedAzure, err := getAzureUsage(log)
+				if err != nil {
+					log.Error("Failed to get Azure usage data: ", err.Error())
+				} else {
+					err = gocsv.MarshalFile(&normalizedAzure, normalizedFile)
+					if err != nil {
+						log.Error("Failed to write normalized Azure data to file: ", err.Error())
+					} else {
+						log.Info("Wrote normalized Azure data to ", normalizedFile.Name())
+					}
+				}
 			}
+
+			// GCP CLIENT
+			if getGCP || getAll {
+				normalizedGCP, err := getGCPUsage(log)
+				if err != nil {
+					log.Error("Failed to get GCP usage data: ", err.Error())
+				} else {
+					err = gocsv.MarshalFile(&normalizedGCP, normalizedFile)
+					if err != nil {
+						log.Error("Failed to write normalized GCP data to file: ", err.Error())
+					} else {
+						log.Info("Wrote normalized GCP data to ", normalizedFile.Name())
+					}
+				}
+			}
+
+			// AWS CLIENT
+			if getAWS || getAll {
+				normalizedAWS, err := getAWSUsage(log)
+				if err != nil {
+					log.Error("Failed to get AWS usage data: ", err.Error())
+				} else {
+					err = gocsv.MarshalFile(&normalizedAWS, normalizedFile)
+					if err != nil {
+						log.Error("Failed to write normalized AWS data to file: ", err.Error())
+					} else {
+						log.Info("Wrote normalized AWS data to ", normalizedFile.Name())
+					}
+				}
+			}
+			// Publish to AWS
+			log.Info("Finished periodic job at %s.\n", time.Now().String())
 		}
-	}
+	}()
 
 	os.Exit(0)
 }
 
-func getAzureUsage() (datamodels.Reports, error) {
+func getAzureUsage(log *logrus.Logger) (datamodels.Reports, error) {
 	azureClient := azure.NewClient("https://ea.azure.com/", os.Getenv("AZURE_ACCESS_KEY"), os.Getenv("AZURE_ENROLLMENT_NUMBER"))
 
-	fmt.Println("Getting Monthly Azure Usage...")
+	log.Debug("Getting Monthly Azure Usage...")
 	azureMonthlyusage, err := azureClient.MonthlyUsageReport()
 	if err != nil {
-		fmt.Println("Failed to get Azure monthly usage: ", err)
+		log.Error("Failed to get Azure monthly usage")
 		return datamodels.Reports{}, err
 	}
 
-	fmt.Println("Got Monthly Azure Usage")
+	log.Debug("Got Monthly Azure Usage")
 	err = ioutil.WriteFile("azure.csv", azureMonthlyusage.CSV, os.ModePerm)
 	if err != nil {
-		fmt.Println("Failed to save Azure Usage to file")
+		log.Error("Failed to save Azure Usage to file")
 		return datamodels.Reports{}, err
 	}
-	fmt.Println("Saved Azure Usage to azure.csv")
+	log.Debug("Saved Azure Usage to azure.csv")
 
 	azureDataFile, err := os.OpenFile("azure.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
-		fmt.Println("Failed to open Azure file")
+		log.Error("Failed to open Azure file")
 		return datamodels.Reports{}, err
 	}
 	defer azureDataFile.Close()
 	usageReader, err := azure.NewUsageReader(azureDataFile)
 	if err != nil {
-		fmt.Println("Failed to parse Azure file")
+		log.Error("Failed to parse Azure file")
 		return datamodels.Reports{}, err
 	}
 	defer os.Remove("azure.csv") // only remove if succeeded to parse
 	return usageReader.Normalize(), nil
 }
 
-func getGCPUsage() (datamodels.Reports, error) {
+func getGCPUsage(log *logrus.Logger) (datamodels.Reports, error) {
 	gcpCredentials, err := ioutil.ReadFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
 	if err != nil {
-		fmt.Println("Failed to create GCP credentials: ", err)
+		log.Error("Failed to create GCP credentials")
 		return datamodels.Reports{}, err
 	}
 	gcpClient, err := gcp.NewClient(gcpCredentials, os.Getenv("GCP_BUCKET_NAME"))
 	if err != nil {
-		fmt.Println("Failed to create GCP client: ", err)
+		log.Error("Failed to create GCP client")
 		return datamodels.Reports{}, err
 	}
 
-	fmt.Println("Getting Monthly GCP Usage...")
+	log.Debug("Getting Monthly GCP Usage...")
 	gcpMonthlyUsage, err := gcpClient.MonthlyUsageReport()
 	if err != nil {
-		fmt.Println("Failed to get GCP monthly usage: ", err)
+		log.Error("Failed to get GCP monthly usage")
 		return datamodels.Reports{}, err
 	}
 
 	reports := datamodels.Reports{}
-	fmt.Println("Got Monthly GCP Usage:")
+	log.Debug("Got Monthly GCP Usage:")
 	for i, usage := range gcpMonthlyUsage.DailyUsage {
 		fileName := "gcp-" + strconv.Itoa(i+1) + ".csv"
 		err = ioutil.WriteFile(fileName, usage.CSV, os.ModePerm)
-		fmt.Println("Saved GCP Usages to gcp-" + strconv.Itoa(i+1) + ".csv")
+		log.Debug("Saved GCP Usages to gcp-" + strconv.Itoa(i+1) + ".csv")
 		if err != nil {
-			fmt.Println("Failed to save GCP Usage to file")
+			log.Error("Failed to save GCP Usage to file")
 			continue
 		}
 
 		gcpDataFile, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, os.ModePerm)
 		if err != nil {
-			fmt.Println("Failed to open GCP file ", fileName)
+			log.Error("Failed to open GCP file ", fileName)
 			continue
 		}
 		usageReader, err := gcp.NewUsageReader(gcpDataFile)
 		if err != nil {
-			fmt.Println("Failed to parse GCP file ", fileName)
+			log.Error("Failed to parse GCP file ", fileName)
 			continue
 		}
 		reports = append(reports, usageReader.Normalize()...)
@@ -168,42 +197,42 @@ func getGCPUsage() (datamodels.Reports, error) {
 	return reports, nil
 }
 
-func getAWSUsage() (datamodels.Reports, error) {
+func getAWSUsage(log *logrus.Logger) (datamodels.Reports, error) {
 	az := os.Getenv("AWS_REGION")
 	sess, err := session.NewSession(&awssdk.Config{
 		Region: awssdk.String(az),
 	})
 	if err != nil {
-		fmt.Println("Failed to create AWS credentails: ", err)
+		log.Error("Failed to create AWS credentails")
 		return datamodels.Reports{}, err
 	}
 
 	awsClient := aws.NewClient(os.Getenv("AWS_BUCKET_NAME"), os.Getenv("AWS_MASTER_ACCOUNT_NUMBER"), sess)
 
-	fmt.Println("Getting Monthly AWS Usage...")
+	log.Debug("Getting Monthly AWS Usage...")
 	awsMonthlyUsage, err := awsClient.MonthlyUsageReport()
 	if err != nil {
-		fmt.Println("Failed to get AWS monthly usage: ", err)
+		log.Error("Failed to get AWS monthly usage: ", err)
 		return datamodels.Reports{}, err
 	}
 
-	fmt.Println("Got Monthly AWS Usage")
+	log.Debug("Got Monthly AWS Usage")
 	err = ioutil.WriteFile("aws.csv", awsMonthlyUsage.CSV, os.ModePerm)
 	if err != nil {
-		fmt.Println("Failed to save AWS Usage to file")
+		log.Error("Failed to save AWS Usage to file")
 		return datamodels.Reports{}, err
 	}
-	fmt.Println("AWS Usage saved to aws.csv")
+	log.Debug("AWS Usage saved to aws.csv")
 
 	awsDataFile, err := os.OpenFile("aws.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
 	if err != nil {
-		fmt.Println("Failed to open AWS file")
+		log.Error("Failed to open AWS file")
 		return datamodels.Reports{}, err
 	}
 	defer awsDataFile.Close()
 	usageReader, err := aws.NewUsageReader(awsDataFile, az)
 	if err != nil {
-		fmt.Println("Failed to parse AWS file")
+		log.Error("Failed to parse AWS file")
 		return datamodels.Reports{}, err
 	}
 	defer os.Remove("aws.csv") // only remove if succeeded to parse
