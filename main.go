@@ -68,9 +68,16 @@ func main() {
 
 	// AWS CLIENT
 	if getAWS || getAll {
-		err := getAWSUsage()
+		normalizedAWS, err := getAWSUsage()
 		if err != nil {
 			fmt.Println(err.Error())
+		} else {
+			err = gocsv.MarshalFile(&normalizedAWS, normalizedFile)
+			if err != nil {
+				fmt.Println("Failed to write normalized AWS data to file: ", err.Error())
+			} else {
+				fmt.Println("Wrote normalized AWS data to ", normalizedFile.Name())
+			}
 		}
 	}
 
@@ -161,13 +168,14 @@ func getGCPUsage() (datamodels.Reports, error) {
 	return reports, nil
 }
 
-func getAWSUsage() error {
+func getAWSUsage() (datamodels.Reports, error) {
+	az := os.Getenv("AWS_REGION")
 	sess, err := session.NewSession(&awssdk.Config{
-		Region: awssdk.String(os.Getenv("AWS_REGION")),
+		Region: awssdk.String(az),
 	})
 	if err != nil {
 		fmt.Println("Failed to create AWS credentails: ", err)
-		return err
+		return datamodels.Reports{}, err
 	}
 
 	awsClient := aws.NewClient(os.Getenv("AWS_BUCKET_NAME"), os.Getenv("AWS_MASTER_ACCOUNT_NUMBER"), sess)
@@ -176,16 +184,28 @@ func getAWSUsage() error {
 	awsMonthlyUsage, err := awsClient.MonthlyUsageReport()
 	if err != nil {
 		fmt.Println("Failed to get AWS monthly usage: ", err)
-		return err
+		return datamodels.Reports{}, err
 	}
 
 	fmt.Println("Got Monthly AWS Usage")
 	err = ioutil.WriteFile("aws.csv", awsMonthlyUsage.CSV, os.ModePerm)
 	if err != nil {
 		fmt.Println("Failed to save AWS Usage to file")
-		return err
+		return datamodels.Reports{}, err
 	}
 	fmt.Println("AWS Usage saved to aws.csv")
 
-	return nil
+	awsDataFile, err := os.OpenFile("aws.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		fmt.Println("Failed to open AWS file")
+		return datamodels.Reports{}, err
+	}
+	defer awsDataFile.Close()
+	usageReader, err := aws.NewUsageReader(awsDataFile, az)
+	if err != nil {
+		fmt.Println("Failed to parse AWS file")
+		return datamodels.Reports{}, err
+	}
+	defer os.Remove("aws.csv") // only remove if succeeded to parse
+	return usageReader.Normalize(), nil
 }
