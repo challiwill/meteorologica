@@ -8,10 +8,16 @@ You can use this tool to collect billing info from all your IAAS's just by runni
 go run main.go
 ```
 
-It also accepts flags to collect billing data from only one (or more) IAAS: 
+It also accepts flags to collect billing data from only one (or more) IAAS:
 ```
 go run main.go -aws -azure
 ```
+
+There is a healthcheck that you can use to confirm the app is running, and see when the last data collection job ran. You can access it at `/healthcheck`, for example:
+```
+http://meteorologica.cfapps.io/healthcheck
+```
+
 
 ##Environment Needed:
 
