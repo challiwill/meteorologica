@@ -1,7 +1,9 @@
 package azure_test
 
 import (
+	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/challiwill/meteorologica/azure"
 
@@ -25,14 +27,14 @@ var _ = Describe("Azure", func() {
 		azureServer.Close()
 	})
 
-	Describe("MonthlyUsageReport", func() {
+	Describe("GetCSV", func() {
 		var (
-			monthlyUsageReport azure.DetailedUsageReport
+			monthlyUsageReport []byte
 			err                error
 		)
 
 		JustBeforeEach(func() {
-			monthlyUsageReport, err = client.MonthlyUsageReport()
+			monthlyUsageReport, err = client.GetCSV()
 		})
 
 		Context("When azure returns valid data", func() {
@@ -56,8 +58,42 @@ var _ = Describe("Azure", func() {
 			})
 
 			It("returns monthly usage report", func() {
-				Expect(monthlyUsageReport).To(Equal(azure.DetailedUsageReport{CSV: []byte(monthlyUsageResponse)}))
+				Expect(monthlyUsageReport).To(Equal([]byte(monthlyUsageReport)))
 			})
+		})
+	})
+
+	Describe("MakeDetailedUsageReport", func() {
+		var (
+			azureMonthlyUsage azure.DetailedUsageReport
+			azureDataFile     []byte
+			err               error
+		)
+
+		BeforeEach(func() {
+			azureDataFile, err = ioutil.ReadFile("../testfixtures/short-azure.csv")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			// delete azure.csv file
+		})
+
+		JustBeforeEach(func() {
+			azureMonthlyUsage = azure.MakeDetailedUsageReport(azureDataFile)
+		})
+
+		It("returns a parsable csv", func() {
+			err = ioutil.WriteFile("/tmp/azure.csv", azureMonthlyUsage.CSV, os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+
+			azureDataFile, err := os.OpenFile("/tmp/azure.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
+			defer azureDataFile.Close()
+			Expect(err).NotTo(HaveOccurred())
+
+			usageReader, err := azure.NewUsageReader(azureDataFile)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(usageReader.UsageReports[0].SubscriptionName).NotTo(BeEmpty())
 		})
 	})
 })
@@ -83,6 +119,7 @@ var availableMonthsResponse = `
 `
 
 var monthlyUsageResponse = `
+one, two, three, four, five
 sometimes, you, might, think, you, want json
 but really, we, know, you, want, CSV
 `

@@ -38,26 +38,40 @@ func NewClient(serverURL, key, enrollment string) *Client {
 }
 
 func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
-	req, err := http.NewRequest("GET", strings.Join([]string{c.URL, "rest", c.enrollment, "usage-report?type=detail"}, "/"), nil)
+	csvBody, err := c.GetCSV()
 	if err != nil {
 		return DetailedUsageReport{}, err
+	}
+	return MakeDetailedUsageReport(csvBody), nil
+}
+
+func (c Client) GetCSV() ([]byte, error) {
+	req, err := http.NewRequest("GET", strings.Join([]string{c.URL, "rest", c.enrollment, "usage-report?type=detail"}, "/"), nil)
+	if err != nil {
+		return nil, err
 	}
 	req.Header.Add("authorization", "bearer "+c.accessKey)
 	req.Header.Add("api-version", "1.0")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return DetailedUsageReport{}, err
+		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return DetailedUsageReport{}, fmt.Errorf("NOT OKAY: %s", resp.Status)
+		return nil, fmt.Errorf("NOT OKAY: %s", resp.Status)
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return DetailedUsageReport{}, err
+		return nil, err
 	}
+	return body, nil
+}
 
-	return DetailedUsageReport{CSV: body}, nil
+func MakeDetailedUsageReport(body []byte) DetailedUsageReport {
+	csvLines := strings.SplitN(string(body), "\n", 3) // for azure the first two lines are garbage
+	csvFirstTwoLinesRemoved := csvLines[2]
+	csvStrippedTrailingComma := strings.Replace(csvFirstTwoLinesRemoved, ",\r\n", "\r\n", -1)
+	return DetailedUsageReport{CSV: []byte(csvStrippedTrailingComma)}
 }
