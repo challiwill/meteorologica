@@ -79,7 +79,7 @@ func (ur *UsageReader) Normalize() datamodels.Reports {
 		}
 		reports = append(reports, datamodels.Report{
 			AccountNumber: usage.SubscriptionGuid,
-			AccountName:   usage.AccountName,
+			AccountName:   usage.SubscriptionName,
 			Day:           usage.Day,
 			Month:         month.String(),
 			Year:          usage.Year,
