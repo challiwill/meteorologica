@@ -1,7 +1,10 @@
 package aws
 
 import (
+	"fmt"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/gocarina/gocsv"
@@ -77,12 +80,17 @@ func (ur *UsageReader) Normalize() datamodels.Reports {
 		if accountID == "" {
 			accountID = usage.PayerAccountId
 		}
+		t, err := time.Parse("2006/01/02 15:04:05", usage.BillingPeriodStartDate)
+		if err != nil {
+			fmt.Printf("Could not parse time '%s', defaulting to today '%s'\n", usage.BillingPeriodStartDate, time.Now().String())
+			t = time.Now()
+		}
 		reports = append(reports, datamodels.Report{
 			AccountNumber: accountID,
 			AccountName:   accountName,
-			Day:           usage.BillingPeriodStartDate,
-			Month:         usage.BillingPeriodStartDate,
-			Year:          usage.BillingPeriodStartDate,
+			Day:           strconv.Itoa(t.Day()),
+			Month:         t.Month().String(),
+			Year:          strconv.Itoa(t.Year()),
 			ServiceType:   usage.ProductName,
 			UsageQuantity: usage.UsageQuantity,
 			Cost:          usage.TotalCost,

@@ -59,7 +59,7 @@ func (ur *UsageReader) Normalize() datamodels.Reports {
 	for _, usage := range ur.UsageReports {
 		t, err := time.Parse("2006-01-02T15:04:05-07:00", usage.StartTime)
 		if err != nil {
-			fmt.Println("")
+			fmt.Printf("Could not parse time '%s', defaulting to today '%s'\n", usage.StartTime, time.Now().String())
 			t = time.Now()
 		}
 		reports = append(reports, datamodels.Report{
