@@ -13,6 +13,7 @@ import (
 	"github.com/challiwill/meteorologica/azure"
 	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/challiwill/meteorologica/gcp"
+	"github.com/gocarina/gocsv"
 )
 
 type Client interface{}
@@ -28,11 +29,24 @@ func main() {
 	getAWS := *awsFlag
 	getAll := !getAzure && !getGCP && !getAWS
 
+	normalizedFile, err := os.Create("normalized_iaas_billing_data.csv")
+	if err != nil {
+		fmt.Println("Failed to create normalized file: ", err.Error())
+		os.Exit(1)
+	}
+
 	// AZURE CLIENT
 	if getAzure || getAll {
-		_, err := getAzureUsage()
+		normalizedAzure, err := getAzureUsage()
 		if err != nil {
-			fmt.Println(err.Error())
+			fmt.Println("Failed to get Azure usage data: ", err.Error())
+		} else {
+			err = gocsv.MarshalFile(&normalizedAzure, normalizedFile)
+			if err != nil {
+				fmt.Println("Failed to write normalized Azure data to file: ", err.Error())
+			} else {
+				fmt.Println("Wrote normalized azure data to ", normalizedFile.Name())
+			}
 		}
 	}
 
@@ -84,15 +98,8 @@ func getAzureUsage() (datamodels.Reports, error) {
 		fmt.Println("Failed to parse Azure file")
 		return datamodels.Reports{}, err
 	}
-	// create usage reader
-	// normalize
-	// write to generalized file
-	// if success, delete other file
-	// else move other file to backup
-
-	fmt.Println(usageReader.Normalize())
-	return datamodels.Reports{}, nil
-	// return usageReader.Normalize(), nil
+	defer os.Remove("azure.csv") // only remove if succeeded to parse
+	return usageReader.Normalize(), nil
 }
 
 func getGCPUsage() error {
