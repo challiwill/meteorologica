@@ -72,6 +72,6 @@ func (c Client) GetCSV() ([]byte, error) {
 func MakeDetailedUsageReport(body []byte) DetailedUsageReport {
 	csvLines := strings.SplitN(string(body), "\n", 3) // for azure the first two lines are garbage
 	csvFirstTwoLinesRemoved := csvLines[2]
-	return DetailedUsageReport{CSV: []byte(csvFirstTwoLinesRemoved)}
-	return DetailedUsageReport{CSV: body}
+	csvStrippedTrailingComma := strings.Replace(csvFirstTwoLinesRemoved, ",\r\n", "\r\n", -1)
+	return DetailedUsageReport{CSV: []byte(csvStrippedTrailingComma)}
 }
