@@ -58,7 +58,7 @@ func (c Client) GetCSV() ([]byte, error) {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("NOT OKAY: %s", resp.Status)
+		return nil, fmt.Errorf("Azure responded with error: %s", resp.Status)
 	}
 	defer resp.Body.Close()
 
