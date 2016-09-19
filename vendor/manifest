@@ -151,6 +151,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/robfig/cron",
+			"repository": "https://github.com/robfig/cron",
+			"vcs": "git",
+			"revision": "990e14eb2f9c5ec2866012e734adcbf0f02f29e9",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "golang.org/x/net/context",
 			"repository": "https://go.googlesource.com/net",
 			"vcs": "git",
