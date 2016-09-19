@@ -45,7 +45,14 @@ func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
 	if err != nil {
 		return DetailedUsageReport{}, err
 	}
-	return DetailedUsageReport{CSV: body}, nil
+
+	csvLines := strings.SplitN(string(body), "\n", -1)
+	for csvLines[len(csvLines)-1] == "" { // remove empty lines
+		csvLines = csvLines[:len(csvLines)-1]
+	}
+	csvLines = csvLines[:len(csvLines)-1] // the last filled in line is a warning
+	csvStr := strings.Join(csvLines, "\n")
+	return DetailedUsageReport{CSV: []byte(csvStr)}, nil
 }
 
 func (c Client) monthlyBillingFileName() string {
