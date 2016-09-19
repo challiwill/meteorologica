@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/challiwill/meteorologica/aws"
 	"github.com/challiwill/meteorologica/azure"
+	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/challiwill/meteorologica/gcp"
 )
 
@@ -29,7 +30,7 @@ func main() {
 
 	// AZURE CLIENT
 	if getAzure || getAll {
-		err := getAzureUsage()
+		_, err := getAzureUsage()
 		if err != nil {
 			fmt.Println(err.Error())
 		}
@@ -54,25 +55,44 @@ func main() {
 	os.Exit(0)
 }
 
-func getAzureUsage() error {
+func getAzureUsage() (datamodels.Reports, error) {
 	azureClient := azure.NewClient("https://ea.azure.com/", os.Getenv("AZURE_ACCESS_KEY"), os.Getenv("AZURE_ENROLLMENT_NUMBER"))
 
 	fmt.Println("Getting Monthly Azure Usage...")
 	azureMonthlyusage, err := azureClient.MonthlyUsageReport()
 	if err != nil {
 		fmt.Println("Failed to get Azure monthly usage: ", err)
-		return err
+		return datamodels.Reports{}, err
 	}
 
 	fmt.Println("Got Monthly Azure Usage")
 	err = ioutil.WriteFile("azure.csv", azureMonthlyusage.CSV, os.ModePerm)
 	if err != nil {
 		fmt.Println("Failed to save Azure Usage to file")
-		return err
+		return datamodels.Reports{}, err
 	}
 	fmt.Println("Saved Azure Usage to azure.csv")
 
-	return nil
+	azureDataFile, err := os.OpenFile("azure.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		fmt.Println("Failed to open Azure file")
+		return datamodels.Reports{}, err
+	}
+	defer azureDataFile.Close()
+	usageReader, err := azure.NewUsageReader(azureDataFile)
+	if err != nil {
+		fmt.Println("Failed to parse Azure file")
+		return datamodels.Reports{}, err
+	}
+	// create usage reader
+	// normalize
+	// write to generalized file
+	// if success, delete other file
+	// else move other file to backup
+
+	fmt.Println(usageReader.Normalize())
+	return datamodels.Reports{}, nil
+	// return usageReader.Normalize(), nil
 }
 
 func getGCPUsage() error {
