@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -45,16 +46,23 @@ func main() {
 			if err != nil {
 				fmt.Println("Failed to write normalized Azure data to file: ", err.Error())
 			} else {
-				fmt.Println("Wrote normalized azure data to ", normalizedFile.Name())
+				fmt.Println("Wrote normalized Azure data to ", normalizedFile.Name())
 			}
 		}
 	}
 
 	// GCP CLIENT
 	if getGCP || getAll {
-		err := getGCPUsage()
+		normalizedGCP, err := getGCPUsage()
 		if err != nil {
 			fmt.Println(err.Error())
+		} else {
+			err = gocsv.MarshalFile(&normalizedGCP, normalizedFile)
+			if err != nil {
+				fmt.Println("Failed to write normalized GCP data to file: ", err.Error())
+			} else {
+				fmt.Println("Wrote normalized GCP data to ", normalizedFile.Name())
+			}
 		}
 	}
 
@@ -102,36 +110,55 @@ func getAzureUsage() (datamodels.Reports, error) {
 	return usageReader.Normalize(), nil
 }
 
-func getGCPUsage() error {
+func getGCPUsage() (datamodels.Reports, error) {
 	gcpCredentials, err := ioutil.ReadFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
 	if err != nil {
 		fmt.Println("Failed to create GCP credentials: ", err)
-		return err
+		return datamodels.Reports{}, err
 	}
 	gcpClient, err := gcp.NewClient(gcpCredentials, os.Getenv("GCP_BUCKET_NAME"))
 	if err != nil {
 		fmt.Println("Failed to create GCP client: ", err)
-		return err
+		return datamodels.Reports{}, err
 	}
 
 	fmt.Println("Getting Monthly GCP Usage...")
 	gcpMonthlyUsage, err := gcpClient.MonthlyUsageReport()
 	if err != nil {
 		fmt.Println("Failed to get GCP monthly usage: ", err)
-		return err
+		return datamodels.Reports{}, err
 	}
 
+	reports := datamodels.Reports{}
 	fmt.Println("Got Monthly GCP Usage:")
 	for i, usage := range gcpMonthlyUsage.DailyUsage {
-		err = ioutil.WriteFile("gcp-"+strconv.Itoa(i+1)+".csv", usage.CSV, os.ModePerm)
+		fileName := "gcp-" + strconv.Itoa(i+1) + ".csv"
+		err = ioutil.WriteFile(fileName, usage.CSV, os.ModePerm)
 		fmt.Println("Saved GCP Usages to gcp-" + strconv.Itoa(i+1) + ".csv")
 		if err != nil {
 			fmt.Println("Failed to save GCP Usage to file")
-			return err
+			continue
 		}
+
+		gcpDataFile, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, os.ModePerm)
+		if err != nil {
+			fmt.Println("Failed to open GCP file ", fileName)
+			continue
+		}
+		usageReader, err := gcp.NewUsageReader(gcpDataFile)
+		if err != nil {
+			fmt.Println("Failed to parse GCP file ", fileName)
+			continue
+		}
+		reports = append(reports, usageReader.Normalize()...)
+		gcpDataFile.Close()
+		defer os.Remove(fileName) // only remove if succeeded to parse
 	}
 
-	return nil
+	if len(reports) == 0 {
+		return datamodels.Reports{}, errors.New("Failed to parse all GCP usage data")
+	}
+	return reports, nil
 }
 
 func getAWSUsage() error {
