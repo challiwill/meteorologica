@@ -18,18 +18,20 @@ To push to cloudfoundry run:
 cf push meteorologica -b https://github.com/cloudfoundry/go-buildpack.git
 ```
 
-There is a healthcheck that you can use to confirm the app is running, and see when the last data collection job ran. You can access it at `/healthcheck`, for example:
+There is a healthcheck that you can use to confirm the app is running, see when the last data collection job ran, and when the next job will run. You can access it at `/healthcheck`, for example:
 ```
 http://meteorologica.cfapps.io/healthcheck
 ```
 
+The app is configured to collect, standardize, and upload a consolidated csv data file at midnight PST each day.
 
 ##Environment Needed:
+Be careful not to upload any credentials to Github as this repository is Public.
 
 ###GCP:
 You need to generate and download a
 [service_account_credential](https://cloud.google.com/storage/docs/authentication#service_accounts).
-Provide a path to the file as an environment variable.
+Provide a path to the file as an environment variable. The file should probably be uploaded to wherever the app is running along with the app (for example in a `credentials/` directory).
 
 You must provide the name of the bucket that holds the billing information files. The billing files are assumed to have the naming format `Billing-YYYY-MM-DD.csv`.
 
