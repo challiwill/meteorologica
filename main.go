@@ -36,7 +36,8 @@ func main() {
 	getAll := !getAzure && !getGCP && !getAWS
 
 	log := logrus.New()
-	log.Out = os.Stderr
+	log.Out = os.Stdout
+	log.Level = logrus.InfoLevel
 
 	runTime := time.Time{}
 
