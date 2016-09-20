@@ -1,1 +1,8 @@
-name: meteorologica
+---
+applications:
+  - name: meteorologica
+    command: meteorologica
+    env:
+      GOVERSION: go1.7
+      GOPACKAGENAME: github.com/challiwill/meteorologica
+

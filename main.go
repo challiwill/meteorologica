@@ -110,7 +110,11 @@ func main() {
 	http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Meteorologica is deployed, last job ran at: %s", runTime.String())
 	})
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 	os.Exit(0)
 }
 

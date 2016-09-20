@@ -13,6 +13,11 @@ It also accepts flags to collect billing data from only one (or more) IAAS:
 go run main.go -aws -azure
 ```
 
+To push to cloudfoundry run:
+```
+cf push meteorologica -b https://github.com/cloudfoundry/go-buildpack.git
+```
+
 There is a healthcheck that you can use to confirm the app is running, and see when the last data collection job ran. You can access it at `/healthcheck`, for example:
 ```
 http://meteorologica.cfapps.io/healthcheck
