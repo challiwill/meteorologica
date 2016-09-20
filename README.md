@@ -8,9 +8,9 @@ You can use this tool to collect billing info from all your IAAS's just by runni
 go run main.go
 ```
 
-It also accepts flags to collect billing data from only one (or more) IAAS:
+It also accepts flags to collect billing data from only one (or more) IAAS (currently `-gcp`, `-azure`, or `aws`), for example:
 ```
-go run main.go -aws -azure
+go run main.go -aws
 ```
 
 To push to cloudfoundry run:
