@@ -3,7 +3,10 @@ package gcpfakes
 
 import (
 	"net/http"
+	"os"
 	"sync"
+
+	storage "google.golang.org/api/storage/v1"
 
 	"github.com/challiwill/meteorologica/gcp"
 )
@@ -17,6 +20,17 @@ type FakeStorageService struct {
 	}
 	dailyUsageReturns struct {
 		result1 *http.Response
+		result2 error
+	}
+	InsertStub        func(string, *storage.Object, *os.File) (*storage.Object, error)
+	insertMutex       sync.RWMutex
+	insertArgsForCall []struct {
+		arg1 string
+		arg2 *storage.Object
+		arg3 *os.File
+	}
+	insertReturns struct {
+		result1 *storage.Object
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -58,11 +72,49 @@ func (fake *FakeStorageService) DailyUsageReturns(result1 *http.Response, result
 	}{result1, result2}
 }
 
+func (fake *FakeStorageService) Insert(arg1 string, arg2 *storage.Object, arg3 *os.File) (*storage.Object, error) {
+	fake.insertMutex.Lock()
+	fake.insertArgsForCall = append(fake.insertArgsForCall, struct {
+		arg1 string
+		arg2 *storage.Object
+		arg3 *os.File
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("Insert", []interface{}{arg1, arg2, arg3})
+	fake.insertMutex.Unlock()
+	if fake.InsertStub != nil {
+		return fake.InsertStub(arg1, arg2, arg3)
+	} else {
+		return fake.insertReturns.result1, fake.insertReturns.result2
+	}
+}
+
+func (fake *FakeStorageService) InsertCallCount() int {
+	fake.insertMutex.RLock()
+	defer fake.insertMutex.RUnlock()
+	return len(fake.insertArgsForCall)
+}
+
+func (fake *FakeStorageService) InsertArgsForCall(i int) (string, *storage.Object, *os.File) {
+	fake.insertMutex.RLock()
+	defer fake.insertMutex.RUnlock()
+	return fake.insertArgsForCall[i].arg1, fake.insertArgsForCall[i].arg2, fake.insertArgsForCall[i].arg3
+}
+
+func (fake *FakeStorageService) InsertReturns(result1 *storage.Object, result2 error) {
+	fake.InsertStub = nil
+	fake.insertReturns = struct {
+		result1 *storage.Object
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeStorageService) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.dailyUsageMutex.RLock()
 	defer fake.dailyUsageMutex.RUnlock()
+	fake.insertMutex.RLock()
+	defer fake.insertMutex.RUnlock()
 	return fake.invocations
 }
 

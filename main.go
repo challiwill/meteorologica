@@ -100,7 +100,20 @@ func main() {
 				}
 			}
 		}
-		// Publish to AWS
+
+		gcpCredentials, err := ioutil.ReadFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+		if err != nil {
+			log.Error("Failed to create GCP credentials to publish normalized data file")
+		}
+		gcpClient, err := gcp.NewClient(gcpCredentials, os.Getenv("GCP_BUCKET_NAME"))
+		if err != nil {
+			log.Error("Failed to create GCP client to publish normalized data file:", err)
+		}
+		err = gcpClient.PublishFileToBucket(log, normalizedFileName)
+		if err != nil {
+			log.Error("Failed to publish data to GCP Bucket:", err)
+		}
+
 		log.Infof("Finished periodic job at %s.", time.Now().String())
 	})
 

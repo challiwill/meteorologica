@@ -5,9 +5,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Sirupsen/logrus"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -18,6 +21,7 @@ import (
 
 type StorageService interface {
 	DailyUsage(string, string) (*http.Response, error)
+	Insert(string, *storage.Object, *os.File) (*storage.Object, error)
 }
 
 type DetailedUsageReport struct {
@@ -34,7 +38,7 @@ type Client struct {
 }
 
 func NewClient(jsonCredentials []byte, bucketName string) (*Client, error) {
-	jwtConfig, err := google.JWTConfigFromJSON(jsonCredentials, "https://www.googleapis.com/auth/devstorage.read_only")
+	jwtConfig, err := google.JWTConfigFromJSON(jsonCredentials, "https://www.googleapis.com/auth/devstorage.read_write")
 	if err != nil {
 		return nil, err
 	}
@@ -75,6 +79,25 @@ func (c Client) DailyUsageReport(day int) (DailyUsageReport, error) {
 		return DailyUsageReport{}, err
 	}
 	return DailyUsageReport{CSV: body}, nil
+}
+
+func (c Client) PublishFileToBucket(log *logrus.Logger, name string) error {
+	object := &storage.Object{Name: "a_code_name_saam/" + name}
+	file, err := os.Open(name)
+	defer file.Close()
+	if err != nil {
+		log.Errorf("Failed to open normalized file: %s", name)
+		return err
+	}
+
+	res, err := c.StorageService.Insert(c.BucketName, object, file)
+	if err != nil {
+		log.Errorf("Objects.Insert to bucket '%s' failed", c.BucketName)
+		return err
+	}
+	log.Infof("Created object %v at location %v", res.Name, res.SelfLink)
+
+	return nil
 }
 
 func dailyBillingFileName(day int) string {
