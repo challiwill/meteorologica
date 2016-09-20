@@ -42,7 +42,14 @@ func main() {
 	runTime := time.Time{}
 
 	// BILLING DATA
-	c := cron.New()
+	sfTime, err := time.LoadLocation("America/Los_Angeles")
+	if err != nil {
+		log.Error("Failed to load San Francisco time, using local time instead")
+		sfTime = time.Now().Location()
+	} else {
+		log.Info("Using San Francisco time. Current SF time is: ", time.Now().In(sfTime).String())
+	}
+	c := cron.NewWithLocation(sfTime)
 	c.AddFunc("@midnight", func() {
 		log.Infof("Running periodic job at %s ...", time.Now().String())
 		runTime = time.Now()
@@ -122,7 +129,7 @@ func main() {
 
 	// HEALTHCHECK
 	http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Meteorologica is deployed, last job ran at: %s", runTime.String())
+		fmt.Fprintf(w, "Meteorologica is deployed\n\n Last job ran at %s\n Next job will run in roughly %s", runTime.String(), c.Entries()[0].Next.Sub(time.Now()).String())
 	})
 	port := os.Getenv("PORT")
 	if port == "" {
