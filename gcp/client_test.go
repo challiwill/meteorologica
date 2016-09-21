@@ -1,7 +1,6 @@
 package gcp_test
 
 import (
-	"github.com/Sirupsen/logrus"
 	"github.com/challiwill/meteorologica/gcp"
 	"github.com/challiwill/meteorologica/gcp/gcpfakes"
 
@@ -29,7 +28,7 @@ var _ = Describe("Gcp", func() {
 		)
 
 		JustBeforeEach(func() {
-			usageReport, err = client.MonthlyUsageReport(logrus.New())
+			usageReport, err = client.MonthlyUsageReport()
 		})
 
 		XContext("when gcp returns the bucket", func() {

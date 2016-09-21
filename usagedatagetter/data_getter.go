@@ -13,11 +13,11 @@ import (
 
 type IaasClient interface {
 	Name() string
-	GetNormalizedUsage(*logrus.Logger) (datamodels.Reports, error)
+	GetNormalizedUsage() (datamodels.Reports, error)
 }
 
 type BucketClient interface {
-	PublishFileToBucket(*logrus.Logger, string) error
+	PublishFileToBucket(string) error
 }
 
 type UsageDataJob struct {
@@ -57,7 +57,7 @@ func (j UsageDataJob) Run() {
 	}
 
 	for _, iaasClient := range j.IAASClients {
-		normalizedData, err := iaasClient.GetNormalizedUsage(j.log)
+		normalizedData, err := iaasClient.GetNormalizedUsage()
 		if err != nil {
 			j.log.Errorf("Failed to get %s usage data: %s", iaasClient.Name(), err.Error())
 			continue
@@ -70,7 +70,7 @@ func (j UsageDataJob) Run() {
 		j.log.Infof("Wrote normalized %s data to %s", iaasClient.Name(), normalizedFile.Name())
 	}
 
-	err = j.BucketClient.PublishFileToBucket(j.log, normalizedFileName)
+	err = j.BucketClient.PublishFileToBucket(normalizedFileName)
 	if err != nil {
 		j.log.Error("Failed to publish data to storage bucket:", err)
 	} else {

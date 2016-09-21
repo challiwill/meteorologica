@@ -36,9 +36,10 @@ type DailyUsageReport struct {
 type Client struct {
 	StorageService StorageService
 	BucketName     string
+	log            *logrus.Logger
 }
 
-func NewClient(jsonCredentials []byte, bucketName string) (*Client, error) {
+func NewClient(log *logrus.Logger, jsonCredentials []byte, bucketName string) (*Client, error) {
 	jwtConfig, err := google.JWTConfigFromJSON(jsonCredentials, "https://www.googleapis.com/auth/devstorage.read_write")
 	if err != nil {
 		return nil, err
@@ -50,6 +51,7 @@ func NewClient(jsonCredentials []byte, bucketName string) (*Client, error) {
 	return &Client{
 		StorageService: &storageService{service: service},
 		BucketName:     bucketName,
+		log:            log,
 	}, nil
 }
 
@@ -57,33 +59,33 @@ func (c Client) Name() string {
 	return "GCP"
 }
 
-func (c Client) GetNormalizedUsage(log *logrus.Logger) (datamodels.Reports, error) {
-	log.Info("Getting Monthly GCP Usage...")
-	gcpMonthlyUsage, err := c.MonthlyUsageReport(log)
+func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
+	c.log.Info("Getting Monthly GCP Usage...")
+	gcpMonthlyUsage, err := c.MonthlyUsageReport()
 	if err != nil {
-		log.Error("Failed to get GCP monthly usage")
+		c.log.Error("Failed to get GCP monthly usage")
 		return datamodels.Reports{}, err
 	}
 
 	reports := datamodels.Reports{}
-	log.Debug("Got Monthly GCP Usage:")
+	c.log.Debug("Got Monthly GCP Usage:")
 	for i, usage := range gcpMonthlyUsage.DailyUsage {
 		fileName := "gcp-" + strconv.Itoa(i+1) + ".csv"
 		err = ioutil.WriteFile(fileName, usage.CSV, os.ModePerm)
-		log.Debug("Saved GCP Usages to gcp-" + strconv.Itoa(i+1) + ".csv")
+		c.log.Debug("Saved GCP Usages to gcp-" + strconv.Itoa(i+1) + ".csv")
 		if err != nil {
-			log.Error("Failed to save GCP Usage to file")
+			c.log.Error("Failed to save GCP Usage to file")
 			continue
 		}
 
 		gcpDataFile, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, os.ModePerm)
 		if err != nil {
-			log.Error("Failed to open GCP file ", fileName)
+			c.log.Error("Failed to open GCP file ", fileName)
 			continue
 		}
-		usageReader, err := NewUsageReader(gcpDataFile)
+		usageReader, err := NewUsageReader(c.log, gcpDataFile)
 		if err != nil {
-			log.Error("Failed to parse GCP file ", fileName)
+			c.log.Error("Failed to parse GCP file ", fileName)
 			continue
 		}
 		reports = append(reports, usageReader.Normalize()...)
@@ -97,13 +99,13 @@ func (c Client) GetNormalizedUsage(log *logrus.Logger) (datamodels.Reports, erro
 	return reports, nil
 }
 
-func (c Client) MonthlyUsageReport(log *logrus.Logger) (DetailedUsageReport, error) {
+func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
 	monthlyUsageReport := DetailedUsageReport{}
 
 	for i := 1; i < time.Now().Day(); i++ {
 		dailyUsage, err := c.DailyUsageReport(i)
 		if err != nil {
-			log.Warnf("Failed to get GCP Daily Usage for %d, %s: %s", i, time.Now().Month().String(), err.Error())
+			c.log.Warnf("Failed to get GCP Daily Usage for %d, %s: %s", i, time.Now().Month().String(), err.Error())
 			continue
 		}
 		monthlyUsageReport.DailyUsage = append(monthlyUsageReport.DailyUsage, dailyUsage)
@@ -126,7 +128,7 @@ func (c Client) DailyUsageReport(day int) (DailyUsageReport, error) {
 	return DailyUsageReport{CSV: body}, nil
 }
 
-func (c Client) PublishFileToBucket(log *logrus.Logger, name string) error {
+func (c Client) PublishFileToBucket(name string) error {
 	object := &storage.Object{
 		Name:        "a_code_name_saam/" + name,
 		ContentType: "text/csv",
@@ -134,16 +136,16 @@ func (c Client) PublishFileToBucket(log *logrus.Logger, name string) error {
 	file, err := os.Open(name)
 	defer file.Close()
 	if err != nil {
-		log.Errorf("Failed to open normalized file: %s", name)
+		c.log.Errorf("Failed to open normalized file: %s", name)
 		return err
 	}
 
 	res, err := c.StorageService.Insert(c.BucketName, object, file)
 	if err != nil {
-		log.Errorf("Objects.Insert to bucket '%s' failed", c.BucketName)
+		c.log.Errorf("Objects.Insert to bucket '%s' failed", c.BucketName)
 		return err
 	}
-	log.Infof("Created object %v at location %v", res.Name, res.SelfLink)
+	c.log.Infof("Created object %v at location %v", res.Name, res.SelfLink)
 
 	return nil
 }

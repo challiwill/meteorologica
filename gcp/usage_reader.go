@@ -1,11 +1,11 @@
 package gcp
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/gocarina/gocsv"
 )
@@ -33,15 +33,17 @@ type Usage struct {
 
 type UsageReader struct {
 	UsageReports []*Usage
+	log          *logrus.Logger
 }
 
-func NewUsageReader(monthlyUsage *os.File) (*UsageReader, error) {
+func NewUsageReader(log *logrus.Logger, monthlyUsage *os.File) (*UsageReader, error) {
 	reports, err := generateReports(monthlyUsage)
 	if err != nil {
 		return nil, err
 	}
 	return &UsageReader{
 		UsageReports: reports,
+		log:          log,
 	}, nil
 }
 
@@ -59,7 +61,7 @@ func (ur *UsageReader) Normalize() datamodels.Reports {
 	for _, usage := range ur.UsageReports {
 		t, err := time.Parse("2006-01-02T15:04:05-07:00", usage.StartTime)
 		if err != nil {
-			fmt.Printf("Could not parse time '%s', defaulting to today '%s'\n", usage.StartTime, time.Now().String())
+			ur.log.Warnf("Could not parse time '%s', defaulting to today '%s'\n", usage.StartTime, time.Now().String())
 			t = time.Now()
 		}
 		reports = append(reports, datamodels.Report{

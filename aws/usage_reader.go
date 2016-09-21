@@ -1,11 +1,11 @@
 package aws
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/gocarina/gocsv"
 )
@@ -45,9 +45,10 @@ type Usage struct {
 
 type UsageReader struct {
 	UsageReports []*Usage
+	log          *logrus.Logger
 }
 
-func NewUsageReader(monthlyUsage *os.File, az string) (*UsageReader, error) {
+func NewUsageReader(log *logrus.Logger, monthlyUsage *os.File, az string) (*UsageReader, error) {
 	reports, err := generateReports(monthlyUsage)
 	if err != nil {
 		return nil, err
@@ -57,6 +58,7 @@ func NewUsageReader(monthlyUsage *os.File, az string) (*UsageReader, error) {
 	}
 	return &UsageReader{
 		UsageReports: reports,
+		log:          log,
 	}, nil
 }
 
@@ -82,7 +84,7 @@ func (ur *UsageReader) Normalize() datamodels.Reports {
 		}
 		t, err := time.Parse("2006/01/02 15:04:05", usage.BillingPeriodStartDate)
 		if err != nil {
-			fmt.Printf("Could not parse time '%s', defaulting to today '%s'\n", usage.BillingPeriodStartDate, time.Now().String())
+			ur.log.Warn("Could not parse time '%s', defaulting to today '%s'\n", usage.BillingPeriodStartDate, time.Now().String())
 			t = time.Now()
 		}
 		reports = append(reports, datamodels.Report{

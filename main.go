@@ -44,7 +44,7 @@ func main() {
 	sfTime, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
 		sfTime = time.Now().Location()
-		log.Error("Failed to load San Francisco time, using local time instead. Current local time is: ", time.Now().In(sfTime).String())
+		log.Warn("Failed to load San Francisco time, using local time instead. Current local time is: ", time.Now().In(sfTime).String())
 	} else {
 		log.Info("Using San Francisco time. Current SF time is: ", time.Now().In(sfTime).String())
 	}
@@ -60,7 +60,7 @@ func main() {
 		if accessKey == "" || enrollmentNumber == "" {
 			log.Error("Azure requires AZURE_ACCESS_KEY and AZURE_ENROLLMENT_NUMBER environment variables to be set")
 		} else {
-			azureClient := azure.NewClient("https://ea.azure.com/", accessKey, enrollmentNumber)
+			azureClient := azure.NewClient(log, "https://ea.azure.com/", accessKey, enrollmentNumber)
 			iaasClients = append(iaasClients, azureClient)
 		}
 	}
@@ -76,7 +76,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to create GCP credentials:", err.Error())
 	} else {
-		gcpClient, err := gcp.NewClient(gcpCredentials, bucketName)
+		gcpClient, err := gcp.NewClient(log, gcpCredentials, bucketName)
 		if err != nil {
 			log.Fatal("Failed to create GCP client:", err.Error())
 		}
@@ -101,7 +101,7 @@ func main() {
 			if err != nil {
 				log.Error("Failed to create AWS credentials:", err.Error())
 			} else {
-				awsClient := aws.NewClient(az, bucketName, accountNumber, sess)
+				awsClient := aws.NewClient(log, az, bucketName, accountNumber, sess)
 				iaasClients = append(iaasClients, awsClient)
 			}
 		}

@@ -1,11 +1,11 @@
 package azure
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/gocarina/gocsv"
 )
@@ -46,15 +46,17 @@ type Usage struct {
 
 type UsageReader struct {
 	UsageReports []*Usage
+	log          *logrus.Logger
 }
 
-func NewUsageReader(monthlyUsage *os.File) (*UsageReader, error) {
+func NewUsageReader(log *logrus.Logger, monthlyUsage *os.File) (*UsageReader, error) {
 	reports, err := generateReports(monthlyUsage)
 	if err != nil {
 		return nil, err
 	}
 	return &UsageReader{
 		UsageReports: reports,
+		log:          log,
 	}, nil
 }
 
@@ -73,7 +75,7 @@ func (ur *UsageReader) Normalize() datamodels.Reports {
 		month := time.Now().Month()
 		m, _ := strconv.Atoi(usage.Month)
 		if m < 1 || m > 12 {
-			fmt.Printf("%s month is invalid, defaulting to this %s\n", usage.Month, time.Now().Month().String())
+			ur.log.Warn("%s month is invalid, defaulting to this %s\n", usage.Month, time.Now().Month().String())
 		} else {
 			month = time.Month(m)
 		}
