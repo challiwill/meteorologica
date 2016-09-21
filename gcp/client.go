@@ -82,7 +82,10 @@ func (c Client) DailyUsageReport(day int) (DailyUsageReport, error) {
 }
 
 func (c Client) PublishFileToBucket(log *logrus.Logger, name string) error {
-	object := &storage.Object{Name: "a_code_name_saam/" + name}
+	object := &storage.Object{
+		Name:        "a_code_name_saam/" + name,
+		ContentType: "text/csv",
+	}
 	file, err := os.Open(name)
 	defer file.Close()
 	if err != nil {
