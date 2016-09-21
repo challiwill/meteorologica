@@ -1,7 +1,7 @@
 package gcp
 
 import (
-	"fmt"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/challiwill/meteorologica/datamodels"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -52,13 +53,57 @@ func NewClient(jsonCredentials []byte, bucketName string) (*Client, error) {
 	}, nil
 }
 
-func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
+func (c Client) Name() string {
+	return "GCP"
+}
+
+func (c Client) GetNormalizedUsage(log *logrus.Logger) (datamodels.Reports, error) {
+	log.Info("Getting Monthly GCP Usage...")
+	gcpMonthlyUsage, err := c.MonthlyUsageReport(log)
+	if err != nil {
+		log.Error("Failed to get GCP monthly usage")
+		return datamodels.Reports{}, err
+	}
+
+	reports := datamodels.Reports{}
+	log.Debug("Got Monthly GCP Usage:")
+	for i, usage := range gcpMonthlyUsage.DailyUsage {
+		fileName := "gcp-" + strconv.Itoa(i+1) + ".csv"
+		err = ioutil.WriteFile(fileName, usage.CSV, os.ModePerm)
+		log.Debug("Saved GCP Usages to gcp-" + strconv.Itoa(i+1) + ".csv")
+		if err != nil {
+			log.Error("Failed to save GCP Usage to file")
+			continue
+		}
+
+		gcpDataFile, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, os.ModePerm)
+		if err != nil {
+			log.Error("Failed to open GCP file ", fileName)
+			continue
+		}
+		usageReader, err := NewUsageReader(gcpDataFile)
+		if err != nil {
+			log.Error("Failed to parse GCP file ", fileName)
+			continue
+		}
+		reports = append(reports, usageReader.Normalize()...)
+		gcpDataFile.Close()
+		defer os.Remove(fileName) // only remove if succeeded to parse
+	}
+
+	if len(reports) == 0 {
+		return datamodels.Reports{}, errors.New("Failed to parse all GCP usage data")
+	}
+	return reports, nil
+}
+
+func (c Client) MonthlyUsageReport(log *logrus.Logger) (DetailedUsageReport, error) {
 	monthlyUsageReport := DetailedUsageReport{}
 
 	for i := 1; i < time.Now().Day(); i++ {
 		dailyUsage, err := c.DailyUsageReport(i)
 		if err != nil {
-			fmt.Printf("Failed to get GCP Daily Usage for %d, %s: %s\n", i, time.Now().Month().String(), err.Error())
+			log.Warnf("Failed to get GCP Daily Usage for %d, %s: %s", i, time.Now().Month().String(), err.Error())
 			continue
 		}
 		monthlyUsageReport.DailyUsage = append(monthlyUsageReport.DailyUsage, dailyUsage)

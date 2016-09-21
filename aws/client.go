@@ -3,13 +3,16 @@ package aws
 import (
 	"io/ioutil"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/challiwill/meteorologica/datamodels"
 )
 
 type DetailedUsageReport struct {
@@ -19,15 +22,52 @@ type DetailedUsageReport struct {
 type Client struct {
 	Bucket        string
 	AccountNumber string
+	Region        string
 	s3            *s3.S3
 }
 
-func NewClient(bucketName, accountNumber string, config client.ConfigProvider) *Client {
+func NewClient(az, bucketName, accountNumber string, config client.ConfigProvider) *Client {
 	return &Client{
 		Bucket:        bucketName,
 		AccountNumber: accountNumber,
+		Region:        az,
 		s3:            s3.New(config),
 	}
+}
+
+func (c Client) Name() string {
+	return "AWS"
+}
+
+func (c Client) GetNormalizedUsage(log *logrus.Logger) (datamodels.Reports, error) {
+	log.Info("Getting Monthly AWS Usage...")
+	awsMonthlyUsage, err := c.MonthlyUsageReport()
+	if err != nil {
+		log.Error("Failed to get AWS monthly usage: ", err)
+		return datamodels.Reports{}, err
+	}
+
+	log.Debug("Got Monthly AWS Usage")
+	err = ioutil.WriteFile("aws.csv", awsMonthlyUsage.CSV, os.ModePerm)
+	if err != nil {
+		log.Error("Failed to save AWS Usage to file")
+		return datamodels.Reports{}, err
+	}
+	log.Debug("AWS Usage saved to aws.csv")
+
+	awsDataFile, err := os.OpenFile("aws.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		log.Error("Failed to open AWS file")
+		return datamodels.Reports{}, err
+	}
+	defer awsDataFile.Close()
+	usageReader, err := NewUsageReader(awsDataFile, c.Region)
+	if err != nil {
+		log.Error("Failed to parse AWS file")
+		return datamodels.Reports{}, err
+	}
+	defer os.Remove("aws.csv") // only remove if succeeded to parse
+	return usageReader.Normalize(), nil
 }
 
 func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
