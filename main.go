@@ -93,7 +93,6 @@ func (j UsageDataJob) Run() {
 	normalizedFileName := strings.Join([]string{
 		strconv.Itoa(runTime.Year()),
 		runTime.Month().String(),
-		strconv.Itoa(runTime.Day()),
 		"normalized-billing-data.csv",
 	}, "-")
 	normalizedFile, err := os.Create(normalizedFileName)
