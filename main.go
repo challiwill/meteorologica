@@ -156,6 +156,8 @@ func (j UsageDataJob) Run() {
 	err = gcpClient.PublishFileToBucket(j.log, normalizedFileName)
 	if err != nil {
 		j.log.Error("Failed to publish data to GCP Bucket:", err)
+	} else {
+		os.Remove(normalizedFileName) // only remove if succeeded to parse
 	}
 	finishedTime := time.Now().In(j.location)
 	j.log.Infof("Finished periodic job at %s. It took %s.", finishedTime.String(), finishedTime.Sub(runTime).String())
