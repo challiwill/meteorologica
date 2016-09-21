@@ -20,7 +20,7 @@ go run main.go -aws
 
 ## Deployment
 
-To push to cloudfoundry run:
+To push to cloudfoundry run the following command from within the app directory:
 ```
 cf push meteorologica -b https://github.com/cloudfoundry/go-buildpack.git
 ```
