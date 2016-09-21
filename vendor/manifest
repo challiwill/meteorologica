@@ -33,7 +33,7 @@
 			"vcs": "git",
 			"revision": "7a81396c57134038e554b2ac86be4653018b20f9",
 			"branch": "master",
-			"path": "/aws",
+			"path": "aws",
 			"notests": true
 		},
 		{
