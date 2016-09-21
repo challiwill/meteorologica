@@ -52,7 +52,7 @@ func main() {
 	c := cron.NewWithLocation(sfTime)
 	c.AddFunc("@midnight", func() {
 		log.Infof("Running periodic job at %s ...", time.Now().String())
-		runTime = time.Now()
+		runTime = time.Now().In(sfTime)
 		normalizedFileName := strings.Join([]string{
 			strconv.Itoa(time.Now().Year()),
 			time.Now().Month().String(),
@@ -129,7 +129,7 @@ func main() {
 
 	// HEALTHCHECK
 	http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Meteorologica is deployed\n\n Last job ran at %s\n Next job will run in roughly %s", runTime.String(), c.Entries()[0].Next.Sub(time.Now()).String())
+		fmt.Fprintf(w, "Meteorologica is deployed\n\n Last job ran at %s\n Next job will run in roughly %s", runTime.String(), c.Entries()[0].Next.Sub(time.Now().In(sfTime)).String())
 	})
 	port := os.Getenv("PORT")
 	if port == "" {
