@@ -27,7 +27,7 @@ cf push meteorologica -b https://github.com/cloudfoundry/go-buildpack.git
 
 There is a healthcheck that you can use to confirm the app is running, see when the last data collection job ran, and when the next job will run. You can access it at [/healthcheck](http://meteorologica.cfapps.io/healthcheck).
 
-Metrics and logs available at [](https://metrics.run.pivotal.io)
+Metrics and logs available at [https://metrics.run.pivotal.io]()
 
 ##Environment Needed:
 Be careful not to upload any credentials to Github as this repository is Public.
