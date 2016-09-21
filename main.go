@@ -51,8 +51,6 @@ func main() {
 		location: sfTime,
 	}
 
-	runTime := time.Time{}
-
 	// BILLING DATA
 	if *nowFlag {
 		usageDataJob.Run()
@@ -68,7 +66,7 @@ func main() {
 
 	// HEALTHCHECK
 	http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Meteorologica is deployed\n\n Last job ran at %s\n Next job will run in roughly %s", runTime.String(), c.Entries()[0].Next.Sub(time.Now().In(sfTime)).String())
+		fmt.Fprintf(w, "Meteorologica is deployed\n\n Last job ran at %s\n Next job will run in roughly %s", usageDataJob.LastRunTime.String(), c.Entries()[0].Next.Sub(time.Now().In(sfTime)).String())
 	})
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -79,16 +77,18 @@ func main() {
 }
 
 type UsageDataJob struct {
-	log      *logrus.Logger
-	getAzure bool
-	getGCP   bool
-	getAWS   bool
-	location *time.Location
+	log         *logrus.Logger
+	getAzure    bool
+	getGCP      bool
+	getAWS      bool
+	location    *time.Location
+	LastRunTime time.Time
 }
 
 func (j UsageDataJob) Run() {
 	getAll := !j.getAzure && !j.getGCP && !j.getAWS
 	runTime := time.Now().In(j.location)
+	j.LastRunTime = runTime
 	j.log.Infof("Running periodic job at %s ...", runTime.String())
 	normalizedFileName := strings.Join([]string{
 		strconv.Itoa(runTime.Year()),

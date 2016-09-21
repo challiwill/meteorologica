@@ -58,7 +58,7 @@ func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
 	for i := 1; i < time.Now().Day(); i++ {
 		dailyUsage, err := c.DailyUsageReport(i)
 		if err != nil {
-			fmt.Printf("Failed to get GCP Daily Usage for day %d this month: %s\n", i, err.Error())
+			fmt.Printf("Failed to get GCP Daily Usage for %d, %s: %s\n", i, time.Now().Month().String(), err.Error())
 			continue
 		}
 		monthlyUsageReport.DailyUsage = append(monthlyUsageReport.DailyUsage, dailyUsage)
