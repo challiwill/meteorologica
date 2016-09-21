@@ -46,6 +46,7 @@ func (j UsageDataJob) Run() {
 	runTime := time.Now().In(j.location)
 	j.LastRunTime = runTime
 	j.log.Infof("Running periodic job at %s ...", runTime.String())
+
 	normalizedFileName := strings.Join([]string{
 		strconv.Itoa(runTime.Year()),
 		runTime.Month().String(),
@@ -74,8 +75,12 @@ func (j UsageDataJob) Run() {
 	if err != nil {
 		j.log.Error("Failed to publish data to storage bucket:", err)
 	} else {
-		os.Remove(normalizedFileName) // only remove if succeeded to parse
+		err = os.Remove(normalizedFileName) // only remove if succeeded to parse
+		if err != nil {
+			j.log.Warn("Failed to remove file:", normalizedFile)
+		}
 	}
+
 	finishedTime := time.Now().In(j.location)
 	j.log.Infof("Finished periodic job at %s. It took %s.", finishedTime.String(), finishedTime.Sub(runTime).String())
 }
