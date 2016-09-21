@@ -43,8 +43,8 @@ func main() {
 
 	sfTime, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
-		log.Error("Failed to load San Francisco time, using local time instead")
 		sfTime = time.Now().Location()
+		log.Error("Failed to load San Francisco time, using local time instead. Current local time is: ", time.Now().In(sfTime).String())
 	} else {
 		log.Info("Using San Francisco time. Current SF time is: ", time.Now().In(sfTime).String())
 	}
@@ -55,39 +55,55 @@ func main() {
 	// Azure Client
 	if getAzure || getAll {
 		log.Debug("Creating Azure Client")
-		azureClient := azure.NewClient("https://ea.azure.com/", os.Getenv("AZURE_ACCESS_KEY"), os.Getenv("AZURE_ENROLLMENT_NUMBER"))
-		iaasClients = append(iaasClients, azureClient)
+		accessKey := os.Getenv("AZURE_ACCESS_KEY")
+		enrollmentNumber := os.Getenv("AZURE_ENROLLMENT_NUMBER")
+		if accessKey == "" || enrollmentNumber == "" {
+			log.Error("Azure requires AZURE_ACCESS_KEY and AZURE_ENROLLMENT_NUMBER environment variables to be set")
+		} else {
+			azureClient := azure.NewClient("https://ea.azure.com/", accessKey, enrollmentNumber)
+			iaasClients = append(iaasClients, azureClient)
+		}
 	}
 
 	// GCP Client
 	log.Debug("Creating GCP Client")
-	gcpCredentials, err := ioutil.ReadFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+	credentialsFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	bucketName := os.Getenv("GCP_BUCKET_NAME")
+	if credentialsFile == "" || bucketName == "" {
+		log.Fatal("GCP requires GCP_BUCKET_NAME and GOOGLE_APPLICATION_CREDENTIALS environment variables to be set")
+	}
+	gcpCredentials, err := ioutil.ReadFile(credentialsFile)
 	if err != nil {
 		log.Fatal("Failed to create GCP credentials:", err.Error())
 	} else {
-		gcpClient, err := gcp.NewClient(gcpCredentials, os.Getenv("GCP_BUCKET_NAME"))
+		gcpClient, err := gcp.NewClient(gcpCredentials, bucketName)
 		if err != nil {
 			log.Fatal("Failed to create GCP client:", err.Error())
-		} else {
-			if getGCP || getAll {
-				iaasClients = append(iaasClients, gcpClient)
-			}
-			bucketClient = gcpClient
 		}
+		if getGCP || getAll {
+			iaasClients = append(iaasClients, gcpClient)
+		}
+		bucketClient = gcpClient
 	}
 
 	// AWS Client
 	if getAWS || getAll {
 		log.Debug("Creating AWS Client")
 		az := os.Getenv("AWS_REGION")
-		sess, err := session.NewSession(&awssdk.Config{
-			Region: awssdk.String(az),
-		})
-		if err != nil {
-			log.Error("Failed to create AWS credentails:", err.Error())
+		bucketName := os.Getenv("AWS_BUCKET_NAME")
+		accountNumber := os.Getenv("AWS_MASTER_ACCOUNT_NUMBER")
+		if az == "" || bucketName == "" || accountNumber == "" {
+			log.Error("AWS requires AWS_REGION, AWS_BUCKET_NAME, and AWS_MASTER_ACCOUNT_NUMBER environment variables to be set")
 		} else {
-			awsClient := aws.NewClient(az, os.Getenv("AWS_BUCKET_NAME"), os.Getenv("AWS_MASTER_ACCOUNT_NUMBER"), sess)
-			iaasClients = append(iaasClients, awsClient)
+			sess, err := session.NewSession(&awssdk.Config{
+				Region: awssdk.String(az),
+			})
+			if err != nil {
+				log.Error("Failed to create AWS credentials:", err.Error())
+			} else {
+				awsClient := aws.NewClient(az, bucketName, accountNumber, sess)
+				iaasClients = append(iaasClients, awsClient)
+			}
 		}
 	}
 
