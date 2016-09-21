@@ -8,10 +8,17 @@ You can use this tool to collect billing info from all your IAAS's just by runni
 go run main.go
 ```
 
-It also accepts flags to collect billing data from only one (or more) IAAS (currently `-gcp`, `-azure`, or `aws`), for example:
+The app is configured to collect, standardize, and upload a consolidated csv data file at midnight PST each day. If you would like it to run immediately pass it the `-now` flag, for example:
+```
+go run main.go -now
+```
+
+It also accepts flags to collect billing data from only one (or more) IAAS (currently `-gcp`, `-azure`, or `-aws`), for example:
 ```
 go run main.go -aws
 ```
+
+## Deployment
 
 To push to cloudfoundry run:
 ```
@@ -22,8 +29,6 @@ There is a healthcheck that you can use to confirm the app is running, see when 
 ```
 http://meteorologica.cfapps.io/healthcheck
 ```
-
-The app is configured to collect, standardize, and upload a consolidated csv data file at midnight PST each day.
 
 ##Environment Needed:
 Be careful not to upload any credentials to Github as this repository is Public.

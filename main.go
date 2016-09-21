@@ -27,21 +27,15 @@ type Client interface{}
 var azureFlag = flag.Bool("azure", false, "")
 var gcpFlag = flag.Bool("gcp", false, "")
 var awsFlag = flag.Bool("aws", false, "")
+var nowFlag = flag.Bool("now", false, "")
 
 func main() {
 	flag.Parse()
-	getAzure := *azureFlag
-	getGCP := *gcpFlag
-	getAWS := *awsFlag
-	getAll := !getAzure && !getGCP && !getAWS
 
 	log := logrus.New()
 	log.Out = os.Stdout
 	log.Level = logrus.InfoLevel
 
-	runTime := time.Time{}
-
-	// BILLING DATA
 	sfTime, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
 		log.Error("Failed to load San Francisco time, using local time instead")
@@ -49,82 +43,27 @@ func main() {
 	} else {
 		log.Info("Using San Francisco time. Current SF time is: ", time.Now().In(sfTime).String())
 	}
+	usageDataJob := UsageDataJob{
+		getAzure: *azureFlag,
+		getGCP:   *gcpFlag,
+		getAWS:   *awsFlag,
+		log:      log,
+		location: sfTime,
+	}
+
+	runTime := time.Time{}
+
+	// BILLING DATA
+	if *nowFlag {
+		usageDataJob.Run()
+		os.Exit(0)
+	}
+
 	c := cron.NewWithLocation(sfTime)
-	c.AddFunc("@midnight", func() {
-		log.Infof("Running periodic job at %s ...", time.Now().In(sfTime).String())
-		runTime = time.Now().In(sfTime)
-		normalizedFileName := strings.Join([]string{
-			strconv.Itoa(time.Now().In(sfTime).Year()),
-			time.Now().In(sfTime).Month().String(),
-			strconv.Itoa(time.Now().In(sfTime).Day()),
-			"normalized-billing-data.csv",
-		}, "-")
-		normalizedFile, err := os.Create(normalizedFileName)
-		if err != nil {
-			log.Fatal("Failed to create normalized file: ", err.Error())
-		}
-
-		// AZURE CLIENT
-		if getAzure || getAll {
-			normalizedAzure, err := getAzureUsage(log)
-			if err != nil {
-				log.Error("Failed to get Azure usage data: ", err.Error())
-			} else {
-				err = gocsv.MarshalFile(&normalizedAzure, normalizedFile)
-				if err != nil {
-					log.Error("Failed to write normalized Azure data to file: ", err.Error())
-				} else {
-					log.Info("Wrote normalized Azure data to ", normalizedFile.Name())
-				}
-			}
-		}
-
-		// GCP CLIENT
-		if getGCP || getAll {
-			normalizedGCP, err := getGCPUsage(log)
-			if err != nil {
-				log.Error("Failed to get GCP usage data: ", err.Error())
-			} else {
-				err = gocsv.MarshalFile(&normalizedGCP, normalizedFile)
-				if err != nil {
-					log.Error("Failed to write normalized GCP data to file: ", err.Error())
-				} else {
-					log.Info("Wrote normalized GCP data to ", normalizedFile.Name())
-				}
-			}
-		}
-
-		// AWS CLIENT
-		if getAWS || getAll {
-			normalizedAWS, err := getAWSUsage(log)
-			if err != nil {
-				log.Error("Failed to get AWS usage data: ", err.Error())
-			} else {
-				err = gocsv.MarshalFile(&normalizedAWS, normalizedFile)
-				if err != nil {
-					log.Error("Failed to write normalized AWS data to file: ", err.Error())
-				} else {
-					log.Info("Wrote normalized AWS data to ", normalizedFile.Name())
-				}
-			}
-		}
-
-		gcpCredentials, err := ioutil.ReadFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
-		if err != nil {
-			log.Error("Failed to create GCP credentials to publish normalized data file")
-		}
-		gcpClient, err := gcp.NewClient(gcpCredentials, os.Getenv("GCP_BUCKET_NAME"))
-		if err != nil {
-			log.Error("Failed to create GCP client to publish normalized data file:", err)
-		}
-		err = gcpClient.PublishFileToBucket(log, normalizedFileName)
-		if err != nil {
-			log.Error("Failed to publish data to GCP Bucket:", err)
-		}
-
-		log.Infof("Finished periodic job at %s.", time.Now().In(sfTime).String())
-	})
-
+	err = c.AddJob("@midnight", usageDataJob)
+	if err != nil {
+		log.Fatal("Could not create cron job:", err.Error())
+	}
 	c.Start()
 
 	// HEALTHCHECK
@@ -137,6 +76,90 @@ func main() {
 	}
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 	os.Exit(0)
+}
+
+type UsageDataJob struct {
+	log      *logrus.Logger
+	getAzure bool
+	getGCP   bool
+	getAWS   bool
+	location *time.Location
+}
+
+func (j UsageDataJob) Run() {
+	getAll := !j.getAzure && !j.getGCP && !j.getAWS
+	runTime := time.Now().In(j.location)
+	j.log.Infof("Running periodic job at %s ...", runTime.String())
+	normalizedFileName := strings.Join([]string{
+		strconv.Itoa(runTime.Year()),
+		runTime.Month().String(),
+		strconv.Itoa(runTime.Day()),
+		"normalized-billing-data.csv",
+	}, "-")
+	normalizedFile, err := os.Create(normalizedFileName)
+	if err != nil {
+		j.log.Fatal("Failed to create normalized file: ", err.Error())
+	}
+
+	// AZURE CLIENT
+	if j.getAzure || getAll {
+		normalizedAzure, err := getAzureUsage(j.log)
+		if err != nil {
+			j.log.Error("Failed to get Azure usage data: ", err.Error())
+		} else {
+			err = gocsv.MarshalFile(&normalizedAzure, normalizedFile)
+			if err != nil {
+				j.log.Error("Failed to write normalized Azure data to file: ", err.Error())
+			} else {
+				j.log.Info("Wrote normalized Azure data to ", normalizedFile.Name())
+			}
+		}
+	}
+
+	// GCP CLIENT
+	if j.getGCP || getAll {
+		normalizedGCP, err := getGCPUsage(j.log)
+		if err != nil {
+			j.log.Error("Failed to get GCP usage data: ", err.Error())
+		} else {
+			err = gocsv.MarshalFile(&normalizedGCP, normalizedFile)
+			if err != nil {
+				j.log.Error("Failed to write normalized GCP data to file: ", err.Error())
+			} else {
+				j.log.Info("Wrote normalized GCP data to ", normalizedFile.Name())
+			}
+		}
+	}
+
+	// AWS CLIENT
+	if j.getAWS || getAll {
+		normalizedAWS, err := getAWSUsage(j.log)
+		if err != nil {
+			j.log.Error("Failed to get AWS usage data: ", err.Error())
+		} else {
+			err = gocsv.MarshalFile(&normalizedAWS, normalizedFile)
+			if err != nil {
+				j.log.Error("Failed to write normalized AWS data to file: ", err.Error())
+			} else {
+				j.log.Info("Wrote normalized AWS data to ", normalizedFile.Name())
+			}
+		}
+	}
+
+	gcpCredentials, err := ioutil.ReadFile(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+	if err != nil {
+		j.log.Error("Failed to create GCP credentials to publish normalized data file")
+	}
+	gcpClient, err := gcp.NewClient(gcpCredentials, os.Getenv("GCP_BUCKET_NAME"))
+	if err != nil {
+		j.log.Error("Failed to create GCP client to publish normalized data file:", err)
+	}
+	err = gcpClient.PublishFileToBucket(j.log, normalizedFileName)
+	if err != nil {
+		j.log.Error("Failed to publish data to GCP Bucket:", err)
+	}
+	finishedTime := time.Now().In(j.location)
+	j.log.Infof("Finished periodic job at %s. It took %s.", finishedTime.String(), finishedTime.Sub(runTime).String())
 }
 
 func getAzureUsage(log *logrus.Logger) (datamodels.Reports, error) {
