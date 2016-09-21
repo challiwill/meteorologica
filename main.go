@@ -51,12 +51,12 @@ func main() {
 	}
 	c := cron.NewWithLocation(sfTime)
 	c.AddFunc("@midnight", func() {
-		log.Infof("Running periodic job at %s ...", time.Now().String())
+		log.Infof("Running periodic job at %s ...", time.Now().In(sfTime).String())
 		runTime = time.Now().In(sfTime)
 		normalizedFileName := strings.Join([]string{
-			strconv.Itoa(time.Now().Year()),
-			time.Now().Month().String(),
-			strconv.Itoa(time.Now().Day()),
+			strconv.Itoa(time.Now().In(sfTime).Year()),
+			time.Now().In(sfTime).Month().String(),
+			strconv.Itoa(time.Now().In(sfTime).Day()),
 			"normalized-billing-data.csv",
 		}, "-")
 		normalizedFile, err := os.Create(normalizedFileName)
@@ -122,7 +122,7 @@ func main() {
 			log.Error("Failed to publish data to GCP Bucket:", err)
 		}
 
-		log.Infof("Finished periodic job at %s.", time.Now().String())
+		log.Infof("Finished periodic job at %s.", time.Now().In(sfTime).String())
 	})
 
 	c.Start()
