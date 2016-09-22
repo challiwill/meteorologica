@@ -3,7 +3,6 @@ package aws
 import (
 	"io/ioutil"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -48,27 +47,14 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 		c.log.Error("Failed to get AWS monthly usage: ", err)
 		return datamodels.Reports{}, err
 	}
+	c.log.Debug("Got Monthly AWS usage")
 
-	c.log.Debug("Got Monthly AWS Usage")
-	err = ioutil.WriteFile("aws.csv", awsMonthlyUsage.CSV, os.ModePerm)
+	usageReader, err := NewUsageReader(c.log, awsMonthlyUsage.CSV, c.Region)
 	if err != nil {
-		c.log.Error("Failed to save AWS Usage to file")
+		c.log.Error("Failed to parse AWS usage")
 		return datamodels.Reports{}, err
 	}
-	c.log.Debug("AWS Usage saved to aws.csv")
 
-	awsDataFile, err := os.OpenFile("aws.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
-	if err != nil {
-		c.log.Error("Failed to open AWS file")
-		return datamodels.Reports{}, err
-	}
-	defer awsDataFile.Close()
-	usageReader, err := NewUsageReader(c.log, awsDataFile, c.Region)
-	if err != nil {
-		c.log.Error("Failed to parse AWS file")
-		return datamodels.Reports{}, err
-	}
-	defer os.Remove("aws.csv") // only remove if succeeded to parse
 	return usageReader.Normalize(), nil
 }
 

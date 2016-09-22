@@ -3,7 +3,6 @@ package azure_test
 import (
 	"io/ioutil"
 	"net/http"
-	"os"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/challiwill/meteorologica/azure"
@@ -85,14 +84,7 @@ var _ = Describe("Azure", func() {
 		})
 
 		It("returns a parsable csv", func() {
-			err = ioutil.WriteFile("/tmp/azure.csv", azureMonthlyUsage.CSV, os.ModePerm)
-			Expect(err).NotTo(HaveOccurred())
-
-			azureDataFile, err := os.OpenFile("/tmp/azure.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
-			defer azureDataFile.Close()
-			Expect(err).NotTo(HaveOccurred())
-
-			usageReader, err := azure.NewUsageReader(logrus.New(), azureDataFile)
+			usageReader, err := azure.NewUsageReader(logrus.New(), azureMonthlyUsage.CSV)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(usageReader.UsageReports[0].SubscriptionName).NotTo(BeEmpty())
 		})

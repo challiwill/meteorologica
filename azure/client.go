@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
@@ -48,33 +47,20 @@ func (c Client) Name() string {
 }
 
 func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
-	c.log.Info("Getting Monthly Azure Usage...")
-	azureMonthlyusage, err := c.MonthlyUsageReport()
+	c.log.Info("Getting monthly Azure usage...")
+	azureMonthlyUsage, err := c.MonthlyUsageReport()
 	if err != nil {
 		c.log.Error("Failed to get Azure monthly usage")
 		return datamodels.Reports{}, err
 	}
+	c.log.Debug("Got monthly Azure usage")
 
-	c.log.Debug("Got Monthly Azure Usage")
-	err = ioutil.WriteFile("azure.csv", azureMonthlyusage.CSV, os.ModePerm)
+	usageReader, err := NewUsageReader(c.log, azureMonthlyUsage.CSV)
 	if err != nil {
-		c.log.Error("Failed to save Azure Usage to file")
+		c.log.Error("Failed to parse Azure usage")
 		return datamodels.Reports{}, err
 	}
-	c.log.Debug("Saved Azure Usage to azure.csv")
 
-	azureDataFile, err := os.OpenFile("azure.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
-	if err != nil {
-		c.log.Error("Failed to open Azure file")
-		return datamodels.Reports{}, err
-	}
-	defer azureDataFile.Close()
-	usageReader, err := NewUsageReader(c.log, azureDataFile)
-	if err != nil {
-		c.log.Error("Failed to parse Azure file")
-		return datamodels.Reports{}, err
-	}
-	defer os.Remove("azure.csv") // only remove if succeeded to parse
 	return usageReader.Normalize(), nil
 }
 

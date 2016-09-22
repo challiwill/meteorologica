@@ -1,7 +1,6 @@
 package aws
 
 import (
-	"os"
 	"strconv"
 	"time"
 
@@ -48,7 +47,7 @@ type UsageReader struct {
 	log          *logrus.Logger
 }
 
-func NewUsageReader(log *logrus.Logger, monthlyUsage *os.File, az string) (*UsageReader, error) {
+func NewUsageReader(log *logrus.Logger, monthlyUsage []byte, az string) (*UsageReader, error) {
 	reports, err := generateReports(monthlyUsage)
 	if err != nil {
 		return nil, err
@@ -62,9 +61,9 @@ func NewUsageReader(log *logrus.Logger, monthlyUsage *os.File, az string) (*Usag
 	}, nil
 }
 
-func generateReports(monthlyUsage *os.File) ([]*Usage, error) {
+func generateReports(monthlyUsage []byte) ([]*Usage, error) {
 	usages := []*Usage{}
-	err := gocsv.UnmarshalFile(monthlyUsage, &usages)
+	err := gocsv.UnmarshalBytes(monthlyUsage, &usages)
 	if err != nil {
 		return nil, err
 	}

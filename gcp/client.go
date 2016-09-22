@@ -70,27 +70,12 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	reports := datamodels.Reports{}
 	c.log.Debug("Got Monthly GCP Usage:")
 	for i, usage := range gcpMonthlyUsage.DailyUsage {
-		fileName := "gcp-" + strconv.Itoa(i+1) + ".csv"
-		err = ioutil.WriteFile(fileName, usage.CSV, os.ModePerm)
-		c.log.Debug("Saved GCP Usages to gcp-" + strconv.Itoa(i+1) + ".csv")
+		usageReader, err := NewUsageReader(c.log, usage.CSV)
 		if err != nil {
-			c.log.Error("Failed to save GCP Usage to file")
-			continue
-		}
-
-		gcpDataFile, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, os.ModePerm)
-		if err != nil {
-			c.log.Error("Failed to open GCP file ", fileName)
-			continue
-		}
-		usageReader, err := NewUsageReader(c.log, gcpDataFile)
-		if err != nil {
-			c.log.Error("Failed to parse GCP file ", fileName)
+			c.log.Error("Failed to parse GCP usage for day", i+1)
 			continue
 		}
 		reports = append(reports, usageReader.Normalize()...)
-		gcpDataFile.Close()
-		defer os.Remove(fileName) // only remove if succeeded to parse
 	}
 
 	if len(reports) == 0 {
@@ -105,7 +90,7 @@ func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
 	for i := 1; i < time.Now().Day(); i++ {
 		dailyUsage, err := c.DailyUsageReport(i)
 		if err != nil {
-			c.log.Warnf("Failed to get GCP Daily Usage for %d, %s: %s", i, time.Now().Month().String(), err.Error())
+			c.log.Warnf("Failed to get GCP Daily Usage for %s, %d: %s", time.Now().Month().String(), i, err.Error())
 			continue
 		}
 		monthlyUsageReport.DailyUsage = append(monthlyUsageReport.DailyUsage, dailyUsage)
