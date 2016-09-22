@@ -25,6 +25,7 @@ var gcpFlag = flag.Bool("gcp", false, "")
 var awsFlag = flag.Bool("aws", false, "")
 var nowFlag = flag.Bool("now", false, "")
 var verboseFlag = flag.Bool("v", false, "")
+var localFlag = flag.Bool("local", false, "")
 
 func main() {
 	flag.Parse()
@@ -33,6 +34,7 @@ func main() {
 	getAWS := *awsFlag
 	getGCP := *gcpFlag
 	getAll := !getAzure && !getGCP && !getAWS
+	local := *localFlag
 
 	log := logrus.New()
 	log.Out = os.Stdout
@@ -107,7 +109,7 @@ func main() {
 		}
 	}
 
-	usageDataJob := usagedatagetter.NewJob(iaasClients, bucketClient, log, sfTime)
+	usageDataJob := usagedatagetter.NewJob(iaasClients, bucketClient, log, sfTime, !local)
 
 	// BILLING DATA
 	if *nowFlag {

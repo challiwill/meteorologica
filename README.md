@@ -13,6 +13,11 @@ The app is configured to collect, standardize, and upload a consolidated csv dat
 go run main.go -now
 ```
 
+By default the app is configured to send the standardized file to the given GCP bucket. To keep the file locally and not ship it to GCP pass in the `-local` flag:
+```
+go run main.go -local
+```
+
 It also accepts flags to collect billing data from only one (or more) IAAS (currently `-gcp`, `-azure`, or `-aws`), for example:
 ```
 go run main.go -aws

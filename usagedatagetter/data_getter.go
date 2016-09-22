@@ -26,6 +26,7 @@ type UsageDataJob struct {
 	BucketClient BucketClient
 	location     *time.Location
 	LastRunTime  time.Time
+	SendToBucket bool
 }
 
 func NewJob(
@@ -33,12 +34,14 @@ func NewJob(
 	bucketClient BucketClient,
 	log *logrus.Logger,
 	location *time.Location,
+	sendToBucket bool,
 ) *UsageDataJob {
 	return &UsageDataJob{
 		log:          log,
 		IAASClients:  iaasClients,
 		BucketClient: bucketClient,
 		location:     location,
+		SendToBucket: sendToBucket,
 	}
 }
 
@@ -76,13 +79,15 @@ func (j *UsageDataJob) Run() {
 		j.log.Infof("Wrote normalized %s data to %s", iaasClient.Name(), normalizedFile.Name())
 	}
 
-	err = j.BucketClient.PublishFileToBucket(normalizedFileName)
-	if err != nil {
-		j.log.Error("Failed to publish data to storage bucket:", err)
-	} else {
-		err = os.Remove(normalizedFileName) // only remove if succeeded to parse
+	if j.SendToBucket {
+		err = j.BucketClient.PublishFileToBucket(normalizedFileName)
 		if err != nil {
-			j.log.Warn("Failed to remove file:", normalizedFile)
+			j.log.Error("Failed to publish data to storage bucket:", err)
+		} else {
+			err = os.Remove(normalizedFileName) // only remove if succeeded to parse
+			if err != nil {
+				j.log.Warn("Failed to remove file:", normalizedFile)
+			}
 		}
 	}
 
