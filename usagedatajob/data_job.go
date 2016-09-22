@@ -20,6 +20,10 @@ type BucketClient interface {
 	PublishFileToBucket(string) error
 }
 
+type DBClient interface {
+	SaveReports(datamodels.Reports) error
+}
+
 type UsageDataJob struct {
 	log      *logrus.Logger
 	location *time.Location
@@ -30,6 +34,7 @@ type UsageDataJob struct {
 	saveToBucket bool
 	saveToDB     bool
 	BucketClient BucketClient
+	DBClient     DBClient
 
 	LastRunTime time.Time
 }
@@ -39,6 +44,7 @@ func NewJob(
 	location *time.Location,
 	iaasClients []IaasClient,
 	bucketClient BucketClient,
+	dbClient DBClient,
 	saveFile bool,
 	saveToBucket bool,
 	saveToDB bool,
@@ -49,6 +55,7 @@ func NewJob(
 
 		IAASClients:  iaasClients,
 		BucketClient: bucketClient,
+		DBClient:     dbClient,
 
 		saveFile:     saveFile,
 		saveToBucket: saveToBucket,
@@ -76,6 +83,14 @@ func (j *UsageDataJob) Run() {
 		if err != nil {
 			j.log.Errorf("Failed to get %s usage data: %s", iaasClient.Name(), err.Error())
 			continue
+		}
+
+		if j.saveToDB {
+			err = j.DBClient.SaveReports(normalizedData)
+			if err != nil {
+				j.log.Errorf("Failed to save %s usage data to the database: %s", iaasClient.Name(), err.Error())
+				continue
+			}
 		}
 
 		if j.saveFile || j.saveToBucket { // Append to file

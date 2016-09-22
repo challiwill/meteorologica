@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/challiwill/meteorologica/aws"
 	"github.com/challiwill/meteorologica/azure"
+	"github.com/challiwill/meteorologica/db"
 	"github.com/challiwill/meteorologica/gcp"
 	"github.com/challiwill/meteorologica/usagedatajob"
 	"github.com/robfig/cron"
@@ -71,7 +72,7 @@ func main() {
 		accessKey := os.Getenv("AZURE_ACCESS_KEY")
 		enrollmentNumber := os.Getenv("AZURE_ENROLLMENT_NUMBER")
 		if accessKey == "" || enrollmentNumber == "" {
-			log.Error("Azure requires AZURE_ACCESS_KEY and AZURE_ENROLLMENT_NUMBER environment variables to be set")
+			log.Fatal("Azure requires AZURE_ACCESS_KEY and AZURE_ENROLLMENT_NUMBER environment variables to be set")
 		} else {
 			azureClient := azure.NewClient(log, "https://ea.azure.com/", accessKey, enrollmentNumber)
 			iaasClients = append(iaasClients, azureClient)
@@ -108,13 +109,13 @@ func main() {
 		bucketName := os.Getenv("AWS_BUCKET_NAME")
 		accountNumber := os.Getenv("AWS_MASTER_ACCOUNT_NUMBER")
 		if az == "" || bucketName == "" || accountNumber == "" {
-			log.Error("AWS requires AWS_REGION, AWS_BUCKET_NAME, and AWS_MASTER_ACCOUNT_NUMBER environment variables to be set")
+			log.Fatal("AWS requires AWS_REGION, AWS_BUCKET_NAME, and AWS_MASTER_ACCOUNT_NUMBER environment variables to be set")
 		} else {
 			sess, err := session.NewSession(&awssdk.Config{
 				Region: awssdk.String(az),
 			})
 			if err != nil {
-				log.Error("Failed to create AWS credentials:", err.Error())
+				log.Fatal("Failed to create AWS credentials:", err.Error())
 			} else {
 				awsClient := aws.NewClient(log, az, bucketName, accountNumber, sess)
 				iaasClients = append(iaasClients, awsClient)
@@ -122,7 +123,16 @@ func main() {
 		}
 	}
 
-	usageDataJob := usagedatajob.NewJob(log, sfTime, iaasClients, bucketClient, keepFile, saveToBucket, saveToDB)
+	// DB Client
+	var dbClient *db.Client
+	if saveToDB {
+		dbClient, err = db.NewClient(os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_ADDRESS"), os.Getenv("DB_NAME"))
+		if err != nil {
+			log.Fatal("Failed to create database client:", err.Error())
+		}
+	}
+
+	usageDataJob := usagedatajob.NewJob(log, sfTime, iaasClients, bucketClient, dbClient, keepFile, saveToBucket, saveToDB)
 
 	// BILLING DATA
 	if *nowFlag {
