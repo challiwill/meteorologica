@@ -33,8 +33,8 @@ func NewJob(
 	bucketClient BucketClient,
 	log *logrus.Logger,
 	location *time.Location,
-) UsageDataJob {
-	return UsageDataJob{
+) *UsageDataJob {
+	return &UsageDataJob{
 		log:          log,
 		IAASClients:  iaasClients,
 		BucketClient: bucketClient,
@@ -42,7 +42,7 @@ func NewJob(
 	}
 }
 
-func (j UsageDataJob) Run() {
+func (j *UsageDataJob) Run() {
 	runTime := time.Now().In(j.location)
 	j.LastRunTime = runTime
 	j.log.Infof("Running periodic job at %s ...", runTime.String())
