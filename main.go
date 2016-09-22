@@ -14,27 +14,38 @@ import (
 	"github.com/challiwill/meteorologica/aws"
 	"github.com/challiwill/meteorologica/azure"
 	"github.com/challiwill/meteorologica/gcp"
-	"github.com/challiwill/meteorologica/usagedatagetter"
+	"github.com/challiwill/meteorologica/usagedatajob"
 	"github.com/robfig/cron"
 )
 
 type Client interface{}
 
-var azureFlag = flag.Bool("azure", false, "")
-var gcpFlag = flag.Bool("gcp", false, "")
-var awsFlag = flag.Bool("aws", false, "")
-var nowFlag = flag.Bool("now", false, "")
-var verboseFlag = flag.Bool("v", false, "")
-var localFlag = flag.Bool("local", false, "")
+var (
+	azureFlag     = flag.Bool("azure", false, "Only retrieve Azure data (by default Azure, AWS, and GCP data is retrieved)")
+	gcpFlag       = flag.Bool("gcp", false, "Only retrieve GCP data (by default Azure, AWS, and GCP data is retrieved)")
+	awsFlag       = flag.Bool("aws", false, "Only retrieve AWS data (by default Azure, AWS, and GCP data is retrieved)")
+	nowFlag       = flag.Bool("now", false, "Run job now (instead of waiting for cron job to kick off at midnight)")
+	verboseFlag   = flag.Bool("v", false, "Log at Debug level")
+	fileFlag      = flag.Bool("file", false, "Keep the generated, normalized CSV file locally")
+	localOnlyFlag = flag.Bool("local", false, "Do not connect to any services (overrides -db and -bucket)")
+	dbFlag        = flag.Bool("db", false, "Save the data to the database")
+	bucketFlag    = flag.Bool("bucket", false, "Save the data as a .csv to the provided GCP bucket")
+)
 
 func main() {
 	flag.Parse()
 
 	getAzure := *azureFlag
-	getAWS := *awsFlag
 	getGCP := *gcpFlag
+	getAWS := *awsFlag
 	getAll := !getAzure && !getGCP && !getAWS
-	local := *localFlag
+
+	keepFile := *fileFlag
+	localOnly := *localOnlyFlag
+	dbf := *dbFlag
+	bkf := *bucketFlag
+	saveToDB := (dbf || (!dbf && !bkf)) && !localOnly
+	saveToBucket := (bkf || (!dbf && !bkf)) && !localOnly
 
 	log := logrus.New()
 	log.Out = os.Stdout
@@ -51,8 +62,8 @@ func main() {
 		log.Info("Using San Francisco time. Current SF time is: ", time.Now().In(sfTime).String())
 	}
 
-	var iaasClients []usagedatagetter.IaasClient
-	var bucketClient usagedatagetter.BucketClient
+	var iaasClients []usagedatajob.IaasClient
+	var bucketClient usagedatajob.BucketClient
 
 	// Azure Client
 	if getAzure || getAll {
@@ -68,24 +79,26 @@ func main() {
 	}
 
 	// GCP Client
-	log.Debug("Creating GCP Client")
-	credentialsFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
-	bucketName := os.Getenv("GCP_BUCKET_NAME")
-	if credentialsFile == "" || bucketName == "" {
-		log.Fatal("GCP requires GCP_BUCKET_NAME and GOOGLE_APPLICATION_CREDENTIALS environment variables to be set")
-	}
-	gcpCredentials, err := ioutil.ReadFile(credentialsFile)
-	if err != nil {
-		log.Fatal("Failed to create GCP credentials:", err.Error())
-	} else {
-		gcpClient, err := gcp.NewClient(log, gcpCredentials, bucketName)
+	if getGCP || getAll || saveToBucket {
+		log.Debug("Creating GCP Client")
+		credentialsFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+		bucketName := os.Getenv("GCP_BUCKET_NAME")
+		if credentialsFile == "" || bucketName == "" {
+			log.Fatal("GCP requires GCP_BUCKET_NAME and GOOGLE_APPLICATION_CREDENTIALS environment variables to be set")
+		}
+		gcpCredentials, err := ioutil.ReadFile(credentialsFile)
 		if err != nil {
-			log.Fatal("Failed to create GCP client:", err.Error())
+			log.Fatal("Failed to create GCP credentials:", err.Error())
+		} else {
+			gcpClient, err := gcp.NewClient(log, gcpCredentials, bucketName)
+			if err != nil {
+				log.Fatal("Failed to create GCP client:", err.Error())
+			}
+			if getGCP || getAll {
+				iaasClients = append(iaasClients, gcpClient)
+			}
+			bucketClient = gcpClient
 		}
-		if getGCP || getAll {
-			iaasClients = append(iaasClients, gcpClient)
-		}
-		bucketClient = gcpClient
 	}
 
 	// AWS Client
@@ -109,7 +122,7 @@ func main() {
 		}
 	}
 
-	usageDataJob := usagedatagetter.NewJob(iaasClients, bucketClient, log, sfTime, !local)
+	usageDataJob := usagedatajob.NewJob(log, sfTime, iaasClients, bucketClient, keepFile, saveToBucket, saveToDB)
 
 	// BILLING DATA
 	if *nowFlag {

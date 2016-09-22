@@ -13,14 +13,27 @@ The app is configured to collect, standardize, and upload a consolidated csv dat
 go run main.go -now
 ```
 
-By default the app is configured to send the standardized file to the given GCP bucket. To keep the file locally and not ship it to GCP pass in the `-local` flag:
+By default the app is configured to send the standardized file to the given GCP bucket. To keep the file locally and not ship it to GCP pass in the `-file` flag:
 ```
-go run main.go -local
+go run main.go -file
 ```
 
-It also accepts flags to collect billing data from only one (or more) IAAS (currently `-gcp`, `-azure`, or `-aws`), for example:
+By default the app collects data from GCP, AWS, and Azure. To collect billing data from only one (or more) IAAS you can pass a flag (currently `-gcp`, `-azure`, or `-aws`), for example:
 ```
 go run main.go -aws
+```
+
+
+All flags:
+```
+-azure    Retrive Azure data
+-aws      Retrieve AWS data
+-gcp      Retrieve GCP data
+-v        Verbose mode, log at the debug level
+-file     Save the generated and normalized data in a local .csv file
+-local    Do not connect to any services, specifically do not send the data to the database or the GCP bucket (this overrides '-db' and '-bucket')
+-db       Save the data to the database (by default this happens, you would only set this flag to send the data to the database and not the GCP bucket)
+-bucket   Save the data to the GCP bucket (by default this happens, you would only set this flag to send the data to the GCP bucket and not the database)
 ```
 
 ## Deployment

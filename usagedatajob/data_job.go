@@ -1,4 +1,4 @@
-package usagedatagetter
+package usagedatajob
 
 import (
 	"os"
@@ -21,27 +21,38 @@ type BucketClient interface {
 }
 
 type UsageDataJob struct {
-	log          *logrus.Logger
-	IAASClients  []IaasClient
+	log      *logrus.Logger
+	location *time.Location
+
+	IAASClients []IaasClient
+
+	saveFile     bool
+	saveToBucket bool
+	saveToDB     bool
 	BucketClient BucketClient
-	location     *time.Location
-	LastRunTime  time.Time
-	SendToBucket bool
+
+	LastRunTime time.Time
 }
 
 func NewJob(
-	iaasClients []IaasClient,
-	bucketClient BucketClient,
 	log *logrus.Logger,
 	location *time.Location,
-	sendToBucket bool,
+	iaasClients []IaasClient,
+	bucketClient BucketClient,
+	saveFile bool,
+	saveToBucket bool,
+	saveToDB bool,
 ) *UsageDataJob {
 	return &UsageDataJob{
-		log:          log,
+		log:      log,
+		location: location,
+
 		IAASClients:  iaasClients,
 		BucketClient: bucketClient,
-		location:     location,
-		SendToBucket: sendToBucket,
+
+		saveFile:     saveFile,
+		saveToBucket: saveToBucket,
+		saveToDB:     saveToDB,
 	}
 }
 
@@ -67,26 +78,30 @@ func (j *UsageDataJob) Run() {
 			continue
 		}
 
-		if i == 0 {
-			err = gocsv.Marshal(&normalizedData, normalizedFile)
-		} else {
-			err = gocsv.MarshalWithoutHeaders(&normalizedData, normalizedFile)
+		if j.saveFile || j.saveToBucket { // Append to file
+			if i == 0 {
+				err = gocsv.Marshal(&normalizedData, normalizedFile)
+			} else {
+				err = gocsv.MarshalWithoutHeaders(&normalizedData, normalizedFile)
+			}
+			if err != nil {
+				j.log.Errorf("Failed to write normalized %s data to file: %s", iaasClient.Name(), err.Error())
+				continue
+			}
+			j.log.Infof("Wrote normalized %s data to %s", iaasClient.Name(), normalizedFile.Name())
 		}
-		if err != nil {
-			j.log.Errorf("Failed to write normalized %s data to file: %s", iaasClient.Name(), err.Error())
-			continue
-		}
-		j.log.Infof("Wrote normalized %s data to %s", iaasClient.Name(), normalizedFile.Name())
 	}
 
-	if j.SendToBucket {
+	if j.saveToBucket { // Send file to bucket
 		err = j.BucketClient.PublishFileToBucket(normalizedFileName)
 		if err != nil {
 			j.log.Error("Failed to publish data to storage bucket:", err)
 		} else {
-			err = os.Remove(normalizedFileName) // only remove if succeeded to parse
-			if err != nil {
-				j.log.Warn("Failed to remove file:", normalizedFile)
+			if !j.saveFile {
+				err = os.Remove(normalizedFileName) // only remove if succeeded to parse
+				if err != nil {
+					j.log.Warn("Failed to remove file:", normalizedFile)
+				}
 			}
 		}
 	}
