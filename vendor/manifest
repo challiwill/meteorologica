@@ -110,10 +110,10 @@
 		},
 		{
 			"importpath": "github.com/gocarina/gocsv",
-			"repository": "https://github.com/gocarina/gocsv",
+			"repository": "https://github.com/challiwill/gocsv",
 			"vcs": "git",
-			"revision": "ebca700e1a9e70f1d9881e5e8a27f921b61740cc",
-			"branch": "master",
+			"revision": "1ce090b77a22494737d49f7e8cb0e79467e33100",
+			"branch": "allow-optional-header",
 			"notests": true
 		},
 		{

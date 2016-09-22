@@ -57,13 +57,18 @@ func (j UsageDataJob) Run() {
 		j.log.Fatal("Failed to create normalized file: ", err.Error())
 	}
 
-	for _, iaasClient := range j.IAASClients {
+	for i, iaasClient := range j.IAASClients {
 		normalizedData, err := iaasClient.GetNormalizedUsage()
 		if err != nil {
 			j.log.Errorf("Failed to get %s usage data: %s", iaasClient.Name(), err.Error())
 			continue
 		}
-		err = gocsv.MarshalFile(&normalizedData, normalizedFile)
+
+		if i == 0 {
+			err = gocsv.Marshal(&normalizedData, normalizedFile)
+		} else {
+			err = gocsv.MarshalWithoutHeaders(&normalizedData, normalizedFile)
+		}
 		if err != nil {
 			j.log.Errorf("Failed to write normalized %s data to file: %s", iaasClient.Name(), err.Error())
 			continue
