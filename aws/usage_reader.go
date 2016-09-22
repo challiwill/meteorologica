@@ -73,6 +73,9 @@ func generateReports(monthlyUsage []byte) ([]*Usage, error) {
 func (ur *UsageReader) Normalize() datamodels.Reports {
 	var reports datamodels.Reports
 	for _, usage := range ur.UsageReports {
+		if usage.ProductCode == "" { // skip lines that total up accounts
+			continue
+		}
 		accountName := usage.LinkedAccountName
 		if accountName == "" {
 			accountName = usage.PayerAccountName
