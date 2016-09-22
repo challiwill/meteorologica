@@ -126,7 +126,8 @@ func main() {
 	// DB Client
 	var dbClient *db.Client
 	if saveToDB {
-		dbClient, err = db.NewClient(os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_ADDRESS"), os.Getenv("DB_NAME"))
+		log.Debug("Creating DB Client")
+		dbClient, err = db.NewClient(log, os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_ADDRESS"), os.Getenv("DB_NAME"))
 		if err != nil {
 			log.Fatal("Failed to create database client:", err.Error())
 		}
@@ -137,6 +138,7 @@ func main() {
 	// BILLING DATA
 	if *nowFlag {
 		usageDataJob.Run()
+		dbClient.Close()
 		os.Exit(0)
 	}
 

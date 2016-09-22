@@ -60,7 +60,7 @@ func (c Client) Name() string {
 }
 
 func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
-	c.log.Info("Getting Monthly GCP Usage...")
+	c.log.Info("Getting monthly GCP usage...")
 	gcpMonthlyUsage, err := c.MonthlyUsageReport()
 	if err != nil {
 		c.log.Error("Failed to get GCP monthly usage")
@@ -68,7 +68,7 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	}
 
 	reports := datamodels.Reports{}
-	c.log.Debug("Got Monthly GCP Usage:")
+	c.log.Debug("Got monthly GCP usage")
 	for i, usage := range gcpMonthlyUsage.DailyUsage {
 		usageReader, err := NewUsageReader(c.log, usage.CSV)
 		if err != nil {

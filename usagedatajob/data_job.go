@@ -86,14 +86,17 @@ func (j *UsageDataJob) Run() {
 		}
 
 		if j.saveToDB {
+			j.log.Debugf("Saving %s data to database...", iaasClient.Name())
 			err = j.DBClient.SaveReports(normalizedData)
 			if err != nil {
 				j.log.Errorf("Failed to save %s usage data to the database: %s", iaasClient.Name(), err.Error())
-				continue
+			} else {
+				j.log.Debugf("Saved %s data to database", iaasClient.Name())
 			}
 		}
 
 		if j.saveFile || j.saveToBucket { // Append to file
+			j.log.Debugf("Writing %s data to file...", iaasClient.Name())
 			if i == 0 {
 				err = gocsv.Marshal(&normalizedData, normalizedFile)
 			} else {
@@ -101,13 +104,14 @@ func (j *UsageDataJob) Run() {
 			}
 			if err != nil {
 				j.log.Errorf("Failed to write normalized %s data to file: %s", iaasClient.Name(), err.Error())
-				continue
+			} else {
+				j.log.Debugf("Wrote normalized %s data to %s", iaasClient.Name(), normalizedFile.Name())
 			}
-			j.log.Infof("Wrote normalized %s data to %s", iaasClient.Name(), normalizedFile.Name())
 		}
 	}
 
 	if j.saveToBucket { // Send file to bucket
+		j.log.Debugf("Saving data file to GCP bucket...")
 		err = j.BucketClient.PublishFileToBucket(normalizedFileName)
 		if err != nil {
 			j.log.Error("Failed to publish data to storage bucket:", err)
@@ -119,6 +123,7 @@ func (j *UsageDataJob) Run() {
 				}
 			}
 		}
+		j.log.Debugf("Saved data file to GCP bucket")
 	}
 
 	finishedTime := time.Now().In(j.location)

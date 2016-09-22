@@ -82,3 +82,11 @@ AZURE_ENROLLMENT_NUMBER=12345
 AZURE_ACCESS_KEY=api-access-key
 ```
 
+### MySQL Database:
+If you would like to connect to a MySQL database the following environment variables must be set as needed:
+```
+DB_USERNAME=account-username
+DB_PASSWORD=account-password
+DB_ADDRESS=hotname:port
+DB_NAME=database-name
+```

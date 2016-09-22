@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/Sirupsen/logrus"
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/challiwill/meteorologica/datamodels"
@@ -17,20 +18,22 @@ type DB interface {
 }
 
 type Client struct {
+	log  *logrus.Logger
 	Conn DB
 }
 
-func NewClient(username, password, address, name string) (*Client, error) {
+func NewClient(log *logrus.Logger, username, password, address, name string) (*Client, error) {
 	if username == "" && password != "" {
 		return nil, errors.New("Cannot have a database password without a username. Please set the DB_PASSWORD environment variable.")
 	}
 
-	conn, err := sql.Open("mysql", username+":"+password+"@"+address+"/"+name+"?reconnect=true")
+	conn, err := sql.Open("mysql", username+":"+password+"@"+"tcp("+address+")/"+name)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Client{
+		log:  log,
 		Conn: conn,
 	}, nil
 }
@@ -39,12 +42,16 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 	if len(reports) == 0 {
 		return errors.New("No reports to save")
 	}
-	for _, r := range reports {
-		c.Conn.Exec(`
+	for i, r := range reports {
+		c.log.Debugf("Saving report to database %d of %d...", i, len(reports))
+		_, err := c.Conn.Exec(`
 		INSERT INTO iaas_billing
 		(AccountNumber, AccountName, Day, Month, Year, ServiceType, UsageQuantity, Cost, Region, UnitOfMeasure, IAAS)
 		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, r.AccountNumber, r.AccountName, r.Day, r.Month, r.Year, r.ServiceType, r.UsageQuantity, r.Cost, r.Region, r.UnitOfMeasure, r.IAAS)
+		if err != nil {
+			c.log.Error("Failed to save report to database: ", err.Error())
+		}
 	}
 	return nil
 }
