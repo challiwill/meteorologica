@@ -1,6 +1,7 @@
 package db_test
 
 import (
+	"github.com/Sirupsen/logrus"
 	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/challiwill/meteorologica/db"
 	"github.com/challiwill/meteorologica/db/dbfakes"
@@ -19,6 +20,7 @@ var _ = Describe("Client", func() {
 		fakedb = new(dbfakes.FakeDB)
 		client = &db.Client{
 			Conn: fakedb,
+			Log:  logrus.New(),
 		}
 	})
 
@@ -79,7 +81,7 @@ var _ = Describe("Client", func() {
 			It("saves the reports in the database", func() {
 				Expect(fakedb.ExecCallCount()).To(Equal(len(reports)))
 				query0, args0 := fakedb.ExecArgsForCall(0)
-				Expect(query0).To(ContainSubstring("INSERT INTO iaas_billing"))
+				Expect(query0).To(ContainSubstring("INSERT IGNORE INTO iaas_billing"))
 				Expect(query0).To(ContainSubstring("(AccountNumber, AccountName, Day, Month, Year, ServiceType, UsageQuantity, Cost, Region, UnitOfMeasure, IAAS)"))
 				Expect(query0).To(ContainSubstring("values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
 				Expect(args0[0]).To(Equal("12345"))
@@ -94,7 +96,7 @@ var _ = Describe("Client", func() {
 				Expect(args0[9]).To(Equal("GB"))
 				Expect(args0[10]).To(Equal("MySpecialIAAS"))
 				query1, args1 := fakedb.ExecArgsForCall(1)
-				Expect(query1).To(ContainSubstring("INSERT INTO iaas_billing"))
+				Expect(query1).To(ContainSubstring("INSERT IGNORE INTO iaas_billing"))
 				Expect(query1).To(ContainSubstring("(AccountNumber, AccountName, Day, Month, Year, ServiceType, UsageQuantity, Cost, Region, UnitOfMeasure, IAAS)"))
 				Expect(query1).To(ContainSubstring("values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
 				Expect(args1[0]).To(Equal("12345"))

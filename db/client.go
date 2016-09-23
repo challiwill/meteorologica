@@ -18,7 +18,7 @@ type DB interface {
 }
 
 type Client struct {
-	log  *logrus.Logger
+	Log  *logrus.Logger
 	Conn DB
 }
 
@@ -33,7 +33,7 @@ func NewClient(log *logrus.Logger, username, password, address, name string) (*C
 	}
 
 	return &Client{
-		log:  log,
+		Log:  log,
 		Conn: conn,
 	}, nil
 }
@@ -43,14 +43,14 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 		return errors.New("No reports to save")
 	}
 	for i, r := range reports {
-		c.log.Debugf("Saving report to database %d of %d...", i, len(reports))
+		c.Log.Debugf("Saving report to database %d of %d...", i, len(reports))
 		_, err := c.Conn.Exec(`
-		INSERT INTO iaas_billing
+		INSERT IGNORE INTO iaas_billing
 		(AccountNumber, AccountName, Day, Month, Year, ServiceType, UsageQuantity, Cost, Region, UnitOfMeasure, IAAS)
 		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, r.AccountNumber, r.AccountName, r.Day, r.Month, r.Year, r.ServiceType, r.UsageQuantity, r.Cost, r.Region, r.UnitOfMeasure, r.IAAS)
 		if err != nil {
-			c.log.Error("Failed to save report to database: ", err.Error())
+			c.Log.Error("Failed to save report to database: ", err.Error())
 		}
 	}
 	return nil
