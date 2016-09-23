@@ -89,11 +89,11 @@ func main() {
 		}
 		gcpCredentials, err := ioutil.ReadFile(credentialsFile)
 		if err != nil {
-			log.Fatal("Failed to create GCP credentials:", err.Error())
+			log.Fatal("Failed to create GCP credentials: ", err.Error())
 		} else {
 			gcpClient, err := gcp.NewClient(log, gcpCredentials, bucketName)
 			if err != nil {
-				log.Fatal("Failed to create GCP client:", err.Error())
+				log.Fatal("Failed to create GCP client: ", err.Error())
 			}
 			if getGCP || getAll {
 				iaasClients = append(iaasClients, gcpClient)
@@ -115,7 +115,7 @@ func main() {
 				Region: awssdk.String(az),
 			})
 			if err != nil {
-				log.Fatal("Failed to create AWS credentials:", err.Error())
+				log.Fatal("Failed to create AWS credentials: ", err.Error())
 			} else {
 				awsClient := aws.NewClient(log, az, bucketName, accountNumber, sess)
 				iaasClients = append(iaasClients, awsClient)
@@ -149,7 +149,7 @@ func main() {
 	c := cron.NewWithLocation(sfTime)
 	err = c.AddJob("@midnight", usageDataJob)
 	if err != nil {
-		log.Fatal("Could not create cron job:", err.Error())
+		log.Fatal("Could not create cron job: ", err.Error())
 	}
 	c.Start()
 
