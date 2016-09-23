@@ -38,10 +38,24 @@ func NewClient(log *logrus.Logger, username, password, address, name string) (*C
 	}, nil
 }
 
+type MultiErr struct {
+	errs []error
+}
+
+func (e MultiErr) Error() string {
+	errString := "Multiple errors occurred: \n"
+	for _, er := range e.errs {
+		errString = errString + er.Error()
+	}
+
+	return errString
+}
+
 func (c *Client) SaveReports(reports datamodels.Reports) error {
 	if len(reports) == 0 {
 		return errors.New("No reports to save")
 	}
+	var multiErr MultiErr
 	for i, r := range reports {
 		c.Log.Debugf("Saving report to database %d of %d...", i, len(reports))
 		_, err := c.Conn.Exec(`
@@ -50,8 +64,13 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, r.AccountNumber, r.AccountName, r.Day, r.Month, r.Year, r.ServiceType, r.UsageQuantity, r.Cost, r.Region, r.UnitOfMeasure, r.IAAS)
 		if err != nil {
-			c.Log.Error("Failed to save report to database: ", err.Error())
+			c.Log.Warn("Failed to save report to database")
+			multiErr.errs = append(multiErr.errs, err)
 		}
+	}
+
+	if len(multiErr.errs) == len(reports) {
+		return multiErr
 	}
 	return nil
 }
