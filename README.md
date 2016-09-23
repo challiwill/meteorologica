@@ -9,7 +9,9 @@ Currently the default behavior is as follows:
 * Metorologica saves the data to a local file `YEAR-MONTH-normalized-billing-data.csv`
 * Meteorologica uploads this file to the specified bucket (currently a GCP bucket only)
 
-*NB: Eventually we would like to be able to upload the csv file into the database, but some database as a service providers do not yet support that.*
+*NB: Eventually we would like to upload the billing information to the database as a load from file using the csv file.
+This should make the save to database step a lot faster.
+Currently some database as a service providers do not yet support this feature.*
 
 ## Use
 You can use this tool to collect billing info from all your IAAS's just by running the file:
@@ -17,7 +19,7 @@ You can use this tool to collect billing info from all your IAAS's just by runni
 go run main.go
 ```
 
-The app is configured to collect, standardize, and upload a consolidated csv data file at midnight PST each day. 
+The app is configured to collect, standardize, and upload a consolidated csv data file at midnight PST each day.
 If you would like it to run immediately pass it the `-now` flag, for example:
 ```
 go run main.go -now
