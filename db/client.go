@@ -15,6 +15,7 @@ import (
 type DB interface {
 	Exec(string, ...interface{}) (sql.Result, error)
 	Close() error
+	Ping() error
 }
 
 type Client struct {
@@ -77,4 +78,8 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 
 func (c *Client) Close() error {
 	return c.Conn.Close()
+}
+
+func (c *Client) Ping() error {
+	return c.Conn.Ping()
 }

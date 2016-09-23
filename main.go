@@ -129,7 +129,11 @@ func main() {
 		log.Debug("Creating DB Client")
 		dbClient, err = db.NewClient(log, os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_ADDRESS"), os.Getenv("DB_NAME"))
 		if err != nil {
-			log.Fatal("Failed to create database client:", err.Error())
+			log.Fatal("Failed to create database client: ", err.Error())
+		}
+		err = dbClient.Ping()
+		if err != nil {
+			log.Fatal("Failed to create database connection: ", err.Error())
 		}
 	}
 

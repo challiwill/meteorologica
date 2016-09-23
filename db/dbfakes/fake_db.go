@@ -25,6 +25,12 @@ type FakeDB struct {
 	closeReturns     struct {
 		result1 error
 	}
+	PingStub        func() error
+	pingMutex       sync.RWMutex
+	pingArgsForCall []struct{}
+	pingReturns     struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -89,6 +95,31 @@ func (fake *FakeDB) CloseReturns(result1 error) {
 	}{result1}
 }
 
+func (fake *FakeDB) Ping() error {
+	fake.pingMutex.Lock()
+	fake.pingArgsForCall = append(fake.pingArgsForCall, struct{}{})
+	fake.recordInvocation("Ping", []interface{}{})
+	fake.pingMutex.Unlock()
+	if fake.PingStub != nil {
+		return fake.PingStub()
+	} else {
+		return fake.pingReturns.result1
+	}
+}
+
+func (fake *FakeDB) PingCallCount() int {
+	fake.pingMutex.RLock()
+	defer fake.pingMutex.RUnlock()
+	return len(fake.pingArgsForCall)
+}
+
+func (fake *FakeDB) PingReturns(result1 error) {
+	fake.PingStub = nil
+	fake.pingReturns = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeDB) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -96,6 +127,8 @@ func (fake *FakeDB) Invocations() map[string][][]interface{} {
 	defer fake.execMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
+	fake.pingMutex.RLock()
+	defer fake.pingMutex.RUnlock()
 	return fake.invocations
 }
 
