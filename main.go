@@ -155,7 +155,12 @@ func main() {
 
 	// HEALTHCHECK
 	http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Meteorologica is deployed\n\n Last job ran at %s\n Next job will run in roughly %s", usageDataJob.LastRunTime.String(), c.Entries()[0].Next.Sub(time.Now().In(sfTime)).String())
+		fmt.Fprintf(w, "Meteorologica is deployed\n\n Last job ran at %s\n\n Next job will run in roughly %s\n    at %s\n\nThere are %d jobs scheduled.",
+			c.Entries()[0].Prev.String(),
+			c.Entries()[0].Next.Sub(time.Now().In(sfTime)).String(),
+			c.Entries()[0].Next,
+			len(c.Entries()),
+		)
 	})
 	port := os.Getenv("PORT")
 	if port == "" {

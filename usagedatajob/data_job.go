@@ -35,8 +35,6 @@ type UsageDataJob struct {
 	saveToDB     bool
 	BucketClient BucketClient
 	DBClient     DBClient
-
-	LastRunTime time.Time
 }
 
 func NewJob(
@@ -65,7 +63,6 @@ func NewJob(
 
 func (j *UsageDataJob) Run() {
 	runTime := time.Now().In(j.location)
-	j.LastRunTime = runTime
 	j.log.Infof("Running periodic job at %s ...", runTime.String())
 
 	normalizedFileName := strings.Join([]string{
