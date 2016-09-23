@@ -44,12 +44,7 @@ type MultiErr struct {
 }
 
 func (e MultiErr) Error() string {
-	errString := "Multiple errors occurred: \n"
-	for _, er := range e.errs {
-		errString = errString + er.Error()
-	}
-
-	return errString
+	return "Multiple errors occurred"
 }
 
 func (c *Client) SaveReports(reports datamodels.Reports) error {
@@ -65,7 +60,7 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, r.AccountNumber, r.AccountName, r.Day, r.Month, r.Year, r.ServiceType, r.UsageQuantity, r.Cost, r.Region, r.UnitOfMeasure, r.IAAS)
 		if err != nil {
-			c.Log.Warn("Failed to save report to database")
+			c.Log.Warn("Failed to save report to database: ", err.Error())
 			multiErr.errs = append(multiErr.errs, err)
 		}
 	}
