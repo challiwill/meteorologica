@@ -47,6 +47,7 @@ All flags:
 -local    Do not connect to any services, specifically do not send the data to the database or the GCP bucket (this overrides '-db' and '-bucket')
 -db       Save the data to the database (by default this happens, you would only set this flag to send the data to the database and not the GCP bucket)
 -bucket   Save the data to the GCP bucket (by default this happens, you would only set this flag to send the data to the GCP bucket and not the database)
+-now      Run the task now instead of waiting for next scheduled job (next midnight)
 ```
 
 ## Deployment
