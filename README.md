@@ -90,3 +90,21 @@ DB_PASSWORD=account-password
 DB_ADDRESS=hotname:port
 DB_NAME=database-name
 ```
+
+The expected schema is (`VARCHAR` and `CHAR` should be adjusted as necessary):
+```
+CREATE TABLE iaas_billing (
+  AccountNumber VARCHAR(15),
+  AccountName VARCHAR(30),
+  Day CHAR(2),
+  Month CHAR(9),
+  Year CHAR(5),
+  ServiceType VARCHAR(30),
+  UsageQuantity VARCHAR(10),
+  Cost VARCHAR(10),
+  Region VARCHAR(10),
+  UnitOfMeasure VARCHAR(10),
+  IAAS VARCHAR(10),
+  UNIQUE KEY(AccountNumber, Day, Month, Year, ServiceType, UsageQuantity, Region, IAAS)
+);
+```
