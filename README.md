@@ -6,7 +6,7 @@ Currently the default behavior is as follows:
 * Meteorologica collects billing information from the location where it is published (AWS bucket, GCP bucket, Azure API)
 * Meteorologica normalizes the data
 * Meteorologica inserts the data into the given MySQL database (right now this step can take a long time because it goes row by row)
-* Metorologica saves the data to a local file `YEAR-MONTH-normalized-billing-data.csv`
+* Metorologica saves the data to a local file `YEAR-MONTH-normalized-billing-data.csv` (eg `2016-September-normalized-billing-data.csv`)
 * Meteorologica uploads this file to the specified bucket (currently a GCP bucket only)
 
 *NB: Eventually we would like to upload the billing information to the database as a load from file using the csv file.
