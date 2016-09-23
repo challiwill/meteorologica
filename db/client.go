@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/Sirupsen/logrus"
 	_ "github.com/go-sql-driver/mysql"
@@ -58,4 +59,21 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 
 func (c *Client) Close() error {
 	return c.Conn.Close()
+}
+
+func (c *Client) SaveCSVFile(fileName string) error {
+	c.Log.Debugf("Saving file '%s' to database...", fileName)
+	_, err := c.Conn.Exec(fmt.Sprintf(`
+		LOAD DATA INFILE '%s'
+		INTO TABLE iaas_billing
+			FIELDS TERMINATED BY ','
+			OPTIONALLY ENCLOSED BY '"'
+			LINES TERMINATED BY '\n'
+			IGNORE 1 LINES;
+		`, fileName))
+	if err != nil {
+		c.Log.Error("Failed to save report to database")
+		return err
+	}
+	return nil
 }

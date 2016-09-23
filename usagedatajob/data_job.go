@@ -22,6 +22,7 @@ type BucketClient interface {
 
 type DBClient interface {
 	SaveReports(datamodels.Reports) error
+	SaveCSVFile(string) error
 }
 
 type UsageDataJob struct {
@@ -85,16 +86,6 @@ func (j *UsageDataJob) Run() {
 			continue
 		}
 
-		if j.saveToDB {
-			j.log.Debugf("Saving %s data to database...", iaasClient.Name())
-			err = j.DBClient.SaveReports(normalizedData)
-			if err != nil {
-				j.log.Errorf("Failed to save %s usage data to the database: %s", iaasClient.Name(), err.Error())
-			} else {
-				j.log.Debugf("Saved %s data to database", iaasClient.Name())
-			}
-		}
-
 		if j.saveFile || j.saveToBucket { // Append to file
 			j.log.Debugf("Writing %s data to file...", iaasClient.Name())
 			if i == 0 {
@@ -107,6 +98,16 @@ func (j *UsageDataJob) Run() {
 			} else {
 				j.log.Debugf("Wrote normalized %s data to %s", iaasClient.Name(), normalizedFile.Name())
 			}
+		}
+	}
+
+	if j.saveToDB {
+		j.log.Info("Saving data file to database...")
+		err = j.DBClient.SaveCSVFile(normalizedFileName)
+		if err != nil {
+			j.log.Error("Failed to save usage data file to the database: ", err.Error())
+		} else {
+			j.log.Info("Saved data file to database")
 		}
 	}
 
