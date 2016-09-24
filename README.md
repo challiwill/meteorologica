@@ -107,7 +107,7 @@ DB_NAME=database-name
 
 The expected schema is (`VARCHAR` and `CHAR` should be adjusted as necessary):
 ```
-CREATE TABLE iaas_billing (
+CREATE TABLE database-name.iaas_billing (
   AccountNumber VARCHAR(15),
   AccountName VARCHAR(30),
   Day CHAR(2),
@@ -122,3 +122,11 @@ CREATE TABLE iaas_billing (
   UNIQUE KEY(AccountNumber, Day, Month, Year, ServiceType, UsageQuantity, Region, IAAS)
 );
 ```
+
+## Migrations
+The current way to run migrations is rather janky. Create a file `migrations/iaas_billing.sql` and then push the app with the `-migrate` flag set:
+```
+cf push meteorologica -c "meteorologica -migrate"
+```
+After this push the app again or restage as appropriate.
+Someday this will be made better.

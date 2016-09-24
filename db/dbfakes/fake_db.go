@@ -31,6 +31,13 @@ type FakeDB struct {
 	pingReturns     struct {
 		result1 error
 	}
+	BeginStub        func() (*sql.Tx, error)
+	beginMutex       sync.RWMutex
+	beginArgsForCall []struct{}
+	beginReturns     struct {
+		result1 *sql.Tx
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -120,6 +127,32 @@ func (fake *FakeDB) PingReturns(result1 error) {
 	}{result1}
 }
 
+func (fake *FakeDB) Begin() (*sql.Tx, error) {
+	fake.beginMutex.Lock()
+	fake.beginArgsForCall = append(fake.beginArgsForCall, struct{}{})
+	fake.recordInvocation("Begin", []interface{}{})
+	fake.beginMutex.Unlock()
+	if fake.BeginStub != nil {
+		return fake.BeginStub()
+	} else {
+		return fake.beginReturns.result1, fake.beginReturns.result2
+	}
+}
+
+func (fake *FakeDB) BeginCallCount() int {
+	fake.beginMutex.RLock()
+	defer fake.beginMutex.RUnlock()
+	return len(fake.beginArgsForCall)
+}
+
+func (fake *FakeDB) BeginReturns(result1 *sql.Tx, result2 error) {
+	fake.BeginStub = nil
+	fake.beginReturns = struct {
+		result1 *sql.Tx
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeDB) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -129,6 +162,8 @@ func (fake *FakeDB) Invocations() map[string][][]interface{} {
 	defer fake.closeMutex.RUnlock()
 	fake.pingMutex.RLock()
 	defer fake.pingMutex.RUnlock()
+	fake.beginMutex.RLock()
+	defer fake.beginMutex.RUnlock()
 	return fake.invocations
 }
 

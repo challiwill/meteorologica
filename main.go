@@ -31,6 +31,7 @@ var (
 	localOnlyFlag = flag.Bool("local", false, "Do not connect to any services (overrides -db and -bucket)")
 	dbFlag        = flag.Bool("db", false, "Save the data to the database")
 	bucketFlag    = flag.Bool("bucket", false, "Save the data as a .csv to the provided GCP bucket")
+	migrateFlag   = flag.Bool("migrate", false, "Run migrations then exit")
 )
 
 func main() {
@@ -48,6 +49,8 @@ func main() {
 	saveToDB := (dbf || (!dbf && !bkf)) && !localOnly
 	saveToBucket := (bkf || (!dbf && !bkf)) && !localOnly
 
+	migrate := *migrateFlag
+
 	log := logrus.New()
 	log.Out = os.Stdout
 	log.Level = logrus.InfoLevel
@@ -61,6 +64,29 @@ func main() {
 		log.Warn("Failed to load San Francisco time, using local time instead. Current local time is: ", time.Now().In(sfTime).String())
 	} else {
 		log.Info("Using San Francisco time. Current SF time is: ", time.Now().In(sfTime).String())
+	}
+
+	// DB Client
+	var dbClient *db.Client
+	if saveToDB || migrate {
+		log.Debug("Creating DB Client")
+		dbClient, err = db.NewClient(log, os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_ADDRESS"), os.Getenv("DB_NAME"))
+		if err != nil {
+			log.Fatal("Failed to create database client: ", err.Error())
+		}
+		err = dbClient.Ping()
+		if err != nil {
+			log.Fatal("Failed to create database connection: ", err.Error())
+		}
+	}
+
+	if migrate {
+		err := dbClient.Migrate()
+		if err != nil {
+			log.Error(err.Error())
+			log.Fatal("Failed to migrate database: ", err.Error())
+		}
+		os.Exit(0)
 	}
 
 	var iaasClients []usagedatajob.IaasClient
@@ -120,20 +146,6 @@ func main() {
 				awsClient := aws.NewClient(log, az, bucketName, accountNumber, sess)
 				iaasClients = append(iaasClients, awsClient)
 			}
-		}
-	}
-
-	// DB Client
-	var dbClient *db.Client
-	if saveToDB {
-		log.Debug("Creating DB Client")
-		dbClient, err = db.NewClient(log, os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_ADDRESS"), os.Getenv("DB_NAME"))
-		if err != nil {
-			log.Fatal("Failed to create database client: ", err.Error())
-		}
-		err = dbClient.Ping()
-		if err != nil {
-			log.Fatal("Failed to create database connection: ", err.Error())
 		}
 	}
 
