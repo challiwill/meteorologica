@@ -174,7 +174,9 @@ func main() {
 	// BILLING DATA
 	if *nowFlag {
 		usageDataJob.Run()
-		dbClient.Close()
+		if dbClient != nil {
+			dbClient.Close()
+		}
 		os.Exit(0)
 	}
 
