@@ -115,7 +115,7 @@ func (c Client) DailyUsageReport(day int) (DailyUsageReport, error) {
 
 func (c Client) PublishFileToBucket(name string) error {
 	object := &storage.Object{
-		Name:        "a_code_name_saam/" + name,
+		Name:        name,
 		ContentType: "text/csv",
 	}
 	file, err := os.Open(name)
