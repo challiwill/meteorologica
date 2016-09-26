@@ -71,10 +71,13 @@ You need to generate and download a
 Provide a path to the file as an environment variable.
 The file should probably be uploaded to wherever the app is running along with the app (for example in a `credentials/` directory).
 
-You must provide the name of the bucket that holds the billing information files. The billing files are assumed to have the naming format `Billing-YYYY-MM-DD.csv`.
+You must provide the name of the bucket that holds the billing information files, and the name of the bucket where you would like the final .csv to end up.
+The billing files are assumed to have the naming format `Billing-YYYY-MM-DD.csv`.
 ```
 GOOGLE_APPLICATION_CREDENTIALS=./path/to/service_account_credential.json
 GCP_BUCKET_NAME=my-bucket
+
+STORAGE_BUCKET_NAME=my-final-bucket
 ```
 
 ###AWS:
