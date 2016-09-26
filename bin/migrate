@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cf push meteorologica -c 'meteorologica -migrate'
+
