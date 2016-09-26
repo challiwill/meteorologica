@@ -106,7 +106,7 @@ func main() {
 	}
 
 	// GCP Client
-	if getGCP || getAll || saveToBucket {
+	if getGCP || getAll {
 		log.Debug("Creating GCP Client")
 		credentialsFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
 		bucketName := os.Getenv("GCP_BUCKET_NAME")
@@ -121,8 +121,28 @@ func main() {
 			if err != nil {
 				log.Fatal("Failed to create GCP client: ", err.Error())
 			}
-			if getGCP || getAll {
-				iaasClients = append(iaasClients, gcpClient)
+			iaasClients = append(iaasClients, gcpClient)
+		}
+	}
+
+	// BucketClient
+	if saveToBucket {
+		log.Debug("Creating Bucket Client (GCP)")
+		credentialsFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+		if credentialsFile == "" {
+			log.Fatal("To store the file Meteorologica requires GOOGLE_APPLICATION_CREDENTIALS environment variable to be set")
+		}
+		bucketName := os.Getenv("STORAGE_BUCKET_NAME")
+		if credentialsFile == "" {
+			log.Fatal("To store the file Meteorologica requires STORAGE_BUCKET_NAME environment variable to be set")
+		}
+		gcpCredentials, err := ioutil.ReadFile(credentialsFile)
+		if err != nil {
+			log.Fatal("Failed to create Bucket (GCP) credentials: ", err.Error())
+		} else {
+			gcpClient, err := gcp.NewClient(log, gcpCredentials, bucketName)
+			if err != nil {
+				log.Fatal("Failed to create Bucket (GCP) client: ", err.Error())
 			}
 			bucketClient = gcpClient
 		}
