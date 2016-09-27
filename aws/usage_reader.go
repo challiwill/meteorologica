@@ -45,9 +45,10 @@ type Usage struct {
 type UsageReader struct {
 	UsageReports []*Usage
 	log          *logrus.Logger
+	location     *time.Location
 }
 
-func NewUsageReader(log *logrus.Logger, monthlyUsage []byte, az string) (*UsageReader, error) {
+func NewUsageReader(log *logrus.Logger, location *time.Location, monthlyUsage []byte, az string) (*UsageReader, error) {
 	reports, err := generateReports(monthlyUsage)
 	if err != nil {
 		return nil, err
@@ -58,6 +59,7 @@ func NewUsageReader(log *logrus.Logger, monthlyUsage []byte, az string) (*UsageR
 	return &UsageReader{
 		UsageReports: reports,
 		log:          log,
+		location:     location,
 	}, nil
 }
 
@@ -84,11 +86,9 @@ func (ur *UsageReader) Normalize() datamodels.Reports {
 		if accountID == "" {
 			accountID = usage.PayerAccountId
 		}
-		t, err := time.Parse("2006/01/02 15:04:05", usage.BillingPeriodStartDate)
-		if err != nil {
-			ur.log.Warn("Could not parse time '%s', defaulting to today '%s'\n", usage.BillingPeriodStartDate, time.Now().String())
-			t = time.Now()
-		}
+
+		ur.log.Info("Using today's date as the date of retrieval for the AWS billing data")
+		t := time.Now().In(ur.location)
 		reports = append(reports, datamodels.Report{
 			AccountNumber: accountID,
 			AccountName:   accountName,

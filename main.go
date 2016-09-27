@@ -163,7 +163,7 @@ func main() {
 			if err != nil {
 				log.Fatal("Failed to create AWS credentials: ", err.Error())
 			} else {
-				awsClient := aws.NewClient(log, az, bucketName, accountNumber, sess)
+				awsClient := aws.NewClient(log, sfTime, az, bucketName, accountNumber, sess)
 				iaasClients = append(iaasClients, awsClient)
 			}
 		}

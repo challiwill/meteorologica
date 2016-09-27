@@ -24,15 +24,17 @@ type Client struct {
 	Region        string
 	s3            *s3.S3
 	log           *logrus.Logger
+	location      *time.Location
 }
 
-func NewClient(log *logrus.Logger, az, bucketName, accountNumber string, config client.ConfigProvider) *Client {
+func NewClient(log *logrus.Logger, location *time.Location, az, bucketName, accountNumber string, config client.ConfigProvider) *Client {
 	return &Client{
 		Bucket:        bucketName,
 		AccountNumber: accountNumber,
 		Region:        az,
 		s3:            s3.New(config),
 		log:           log,
+		location:      location,
 	}
 }
 
@@ -49,7 +51,7 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	}
 	c.log.Debug("Got Monthly AWS usage")
 
-	usageReader, err := NewUsageReader(c.log, awsMonthlyUsage.CSV, c.Region)
+	usageReader, err := NewUsageReader(c.log, c.location, awsMonthlyUsage.CSV, c.Region)
 	if err != nil {
 		c.log.Error("Failed to parse AWS usage")
 		return datamodels.Reports{}, err
