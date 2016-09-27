@@ -92,7 +92,7 @@ func (ur *UsageReader) Normalize() datamodels.Reports {
 		reports = append(reports, datamodels.Report{
 			AccountNumber: accountID,
 			AccountName:   accountName,
-			Day:           strconv.Itoa(t.Day()),
+			Day:           strconv.Itoa(t.Day() - 1),
 			Month:         t.Month().String(),
 			Year:          strconv.Itoa(t.Year()),
 			ServiceType:   usage.ProductName,
