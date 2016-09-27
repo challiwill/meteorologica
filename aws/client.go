@@ -86,7 +86,7 @@ func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
 }
 
 func (c Client) monthlyBillingFileName() string {
-	year, month, _ := time.Now().Date()
+	year, month, _ := time.Now().In(c.location).Date()
 	monthStr := padMonth(month)
 	return url.QueryEscape(strings.Join([]string{c.AccountNumber, "aws", "billing", "csv", strconv.Itoa(year), monthStr}, "-") + ".csv")
 }

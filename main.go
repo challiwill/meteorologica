@@ -100,7 +100,7 @@ func main() {
 		if accessKey == "" || enrollmentNumber == "" {
 			log.Fatal("Azure requires AZURE_ACCESS_KEY and AZURE_ENROLLMENT_NUMBER environment variables to be set")
 		} else {
-			azureClient := azure.NewClient(log, "https://ea.azure.com/", accessKey, enrollmentNumber)
+			azureClient := azure.NewClient(log, sfTime, "https://ea.azure.com/", accessKey, enrollmentNumber)
 			iaasClients = append(iaasClients, azureClient)
 		}
 	}
@@ -117,7 +117,7 @@ func main() {
 		if err != nil {
 			log.Fatal("Failed to create GCP credentials: ", err.Error())
 		} else {
-			gcpClient, err := gcp.NewClient(log, gcpCredentials, bucketName)
+			gcpClient, err := gcp.NewClient(log, sfTime, gcpCredentials, bucketName)
 			if err != nil {
 				log.Fatal("Failed to create GCP client: ", err.Error())
 			}
@@ -140,7 +140,7 @@ func main() {
 		if err != nil {
 			log.Fatal("Failed to create Bucket (GCP) credentials: ", err.Error())
 		} else {
-			gcpClient, err := gcp.NewClient(log, gcpCredentials, bucketName)
+			gcpClient, err := gcp.NewClient(log, sfTime, gcpCredentials, bucketName)
 			if err != nil {
 				log.Fatal("Failed to create Bucket (GCP) client: ", err.Error())
 			}

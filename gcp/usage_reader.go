@@ -33,9 +33,10 @@ type Usage struct {
 type UsageReader struct {
 	UsageReports []*Usage
 	log          *logrus.Logger
+	location     *time.Location
 }
 
-func NewUsageReader(log *logrus.Logger, monthlyUsage []byte) (*UsageReader, error) {
+func NewUsageReader(log *logrus.Logger, location *time.Location, monthlyUsage []byte) (*UsageReader, error) {
 	reports, err := generateReports(monthlyUsage)
 	if err != nil {
 		return nil, err
@@ -43,6 +44,7 @@ func NewUsageReader(log *logrus.Logger, monthlyUsage []byte) (*UsageReader, erro
 	return &UsageReader{
 		UsageReports: reports,
 		log:          log,
+		location:     location,
 	}, nil
 }
 
@@ -60,8 +62,8 @@ func (ur *UsageReader) Normalize() datamodels.Reports {
 	for _, usage := range ur.UsageReports {
 		t, err := time.Parse("2006-01-02T15:04:05-07:00", usage.StartTime)
 		if err != nil {
-			ur.log.Warnf("Could not parse time '%s', defaulting to today '%s'\n", usage.StartTime, time.Now().String())
-			t = time.Now()
+			ur.log.Warnf("Could not parse time '%s', defaulting to today '%s'\n", usage.StartTime, time.Now().In(ur.location).String())
+			t = time.Now().In(ur.location)
 		}
 		reports = append(reports, datamodels.Report{
 			AccountNumber: usage.ProjectNumber,

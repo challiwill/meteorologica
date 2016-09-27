@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/challiwill/meteorologica/datamodels"
@@ -30,15 +31,17 @@ type Client struct {
 	accessKey  string
 	enrollment string
 	log        *logrus.Logger
+	location   *time.Location
 }
 
-func NewClient(log *logrus.Logger, serverURL, key, enrollment string) *Client {
+func NewClient(log *logrus.Logger, location *time.Location, serverURL, key, enrollment string) *Client {
 	return &Client{
 		URL:        serverURL,
 		client:     new(http.Client),
 		accessKey:  key,
 		enrollment: enrollment,
 		log:        log,
+		location:   location,
 	}
 }
 
@@ -55,7 +58,7 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	}
 	c.log.Debug("Got monthly Azure usage")
 
-	usageReader, err := NewUsageReader(c.log, azureMonthlyUsage.CSV)
+	usageReader, err := NewUsageReader(c.log, c.location, azureMonthlyUsage.CSV)
 	if err != nil {
 		c.log.Error("Failed to parse Azure usage")
 		return datamodels.Reports{}, err

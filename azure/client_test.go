@@ -3,6 +3,7 @@ package azure_test
 import (
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/challiwill/meteorologica/azure"
@@ -20,7 +21,7 @@ var _ = Describe("Azure", func() {
 
 	BeforeEach(func() {
 		azureServer = ghttp.NewServer()
-		client = azure.NewClient(logrus.New(), azureServer.URL(), "some-key", "1337")
+		client = azure.NewClient(logrus.New(), time.Now().Location(), azureServer.URL(), "some-key", "1337")
 	})
 
 	AfterEach(func() {
@@ -84,7 +85,7 @@ var _ = Describe("Azure", func() {
 		})
 
 		It("returns a parsable csv", func() {
-			usageReader, err := azure.NewUsageReader(logrus.New(), azureMonthlyUsage.CSV)
+			usageReader, err := azure.NewUsageReader(logrus.New(), time.Now().Location(), azureMonthlyUsage.CSV)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(usageReader.UsageReports[0].SubscriptionName).NotTo(BeEmpty())
 		})

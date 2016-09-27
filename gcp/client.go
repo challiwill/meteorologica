@@ -37,9 +37,10 @@ type Client struct {
 	StorageService StorageService
 	BucketName     string
 	log            *logrus.Logger
+	location       *time.Location
 }
 
-func NewClient(log *logrus.Logger, jsonCredentials []byte, bucketName string) (*Client, error) {
+func NewClient(log *logrus.Logger, location *time.Location, jsonCredentials []byte, bucketName string) (*Client, error) {
 	jwtConfig, err := google.JWTConfigFromJSON(jsonCredentials, "https://www.googleapis.com/auth/devstorage.read_write")
 	if err != nil {
 		return nil, err
@@ -52,6 +53,7 @@ func NewClient(log *logrus.Logger, jsonCredentials []byte, bucketName string) (*
 		StorageService: &storageService{service: service},
 		BucketName:     bucketName,
 		log:            log,
+		location:       location,
 	}, nil
 }
 
@@ -70,7 +72,7 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	reports := datamodels.Reports{}
 	c.log.Debug("Got monthly GCP usage")
 	for i, usage := range gcpMonthlyUsage.DailyUsage {
-		usageReader, err := NewUsageReader(c.log, usage.CSV)
+		usageReader, err := NewUsageReader(c.log, c.location, usage.CSV)
 		if err != nil {
 			c.log.Error("Failed to parse GCP usage for day", i+1)
 			continue
@@ -87,10 +89,10 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
 	monthlyUsageReport := DetailedUsageReport{}
 
-	for i := 1; i < time.Now().Day(); i++ {
+	for i := 1; i < time.Now().In(c.location).Day(); i++ {
 		dailyUsage, err := c.DailyUsageReport(i)
 		if err != nil {
-			c.log.Warnf("Failed to get GCP Daily Usage for %s, %d: %s", time.Now().Month().String(), i, err.Error())
+			c.log.Warnf("Failed to get GCP Daily Usage for %s, %d: %s", time.Now().In(c.location).Month().String(), i, err.Error())
 			continue
 		}
 		monthlyUsageReport.DailyUsage = append(monthlyUsageReport.DailyUsage, dailyUsage)
@@ -100,7 +102,7 @@ func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
 }
 
 func (c Client) DailyUsageReport(day int) (DailyUsageReport, error) {
-	resp, err := c.StorageService.DailyUsage(c.BucketName, dailyBillingFileName(day))
+	resp, err := c.StorageService.DailyUsage(c.BucketName, c.dailyBillingFileName(day))
 	if err != nil {
 		return DailyUsageReport{}, err
 	}
@@ -135,8 +137,8 @@ func (c Client) PublishFileToBucket(name string) error {
 	return nil
 }
 
-func dailyBillingFileName(day int) string {
-	year, month, _ := time.Now().Date()
+func (c Client) dailyBillingFileName(day int) string {
+	year, month, _ := time.Now().In(c.location).Date()
 	monthStr := padMonth(month)
 	dayStr := padDay(day)
 	return url.QueryEscape(strings.Join([]string{"Billing", strconv.Itoa(year), monthStr, dayStr}, "-") + ".csv")

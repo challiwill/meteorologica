@@ -46,9 +46,10 @@ type Usage struct {
 type UsageReader struct {
 	UsageReports []*Usage
 	log          *logrus.Logger
+	location     *time.Location
 }
 
-func NewUsageReader(log *logrus.Logger, monthlyUsage []byte) (*UsageReader, error) {
+func NewUsageReader(log *logrus.Logger, location *time.Location, monthlyUsage []byte) (*UsageReader, error) {
 	reports, err := generateReports(monthlyUsage)
 	if err != nil {
 		return nil, err
@@ -56,6 +57,7 @@ func NewUsageReader(log *logrus.Logger, monthlyUsage []byte) (*UsageReader, erro
 	return &UsageReader{
 		UsageReports: reports,
 		log:          log,
+		location:     location,
 	}, nil
 }
 
@@ -71,10 +73,10 @@ func generateReports(monthlyUsage []byte) ([]*Usage, error) {
 func (ur *UsageReader) Normalize() datamodels.Reports {
 	var reports datamodels.Reports
 	for _, usage := range ur.UsageReports {
-		month := time.Now().Month()
+		month := time.Now().In(ur.location).Month()
 		m, _ := strconv.Atoi(usage.Month)
 		if m < 1 || m > 12 {
-			ur.log.Warn("%s month is invalid, defaulting to this %s\n", usage.Month, time.Now().Month().String())
+			ur.log.Warn("%s month is invalid, defaulting to this %s\n", usage.Month, time.Now().In(ur.location).Month().String())
 		} else {
 			month = time.Month(m)
 		}
