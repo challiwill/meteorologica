@@ -1,3 +1,5 @@
 #!/bin/bash
 
-cf ssh meteorologica -L 3306:p-mysql-proxy.run.pivotal.io:3306 -N
+cf ssh meteorologica -L 2020:p-mysql-proxy.run.pivotal.io:3306 -N
+# To connect run:
+# mysql -h 127.0.0.1 -P 2020 -u DB_USERNAME -D DB_NAME -p
