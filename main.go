@@ -99,10 +99,9 @@ func main() {
 		enrollmentNumber := os.Getenv("AZURE_ENROLLMENT_NUMBER")
 		if accessKey == "" || enrollmentNumber == "" {
 			log.Fatal("Azure requires AZURE_ACCESS_KEY and AZURE_ENROLLMENT_NUMBER environment variables to be set")
-		} else {
-			azureClient := azure.NewClient(log, sfTime, "https://ea.azure.com/", accessKey, enrollmentNumber)
-			iaasClients = append(iaasClients, azureClient)
 		}
+		azureClient := azure.NewClient(log, sfTime, "https://ea.azure.com/", accessKey, enrollmentNumber)
+		iaasClients = append(iaasClients, azureClient)
 	}
 
 	// GCP Client
@@ -116,13 +115,12 @@ func main() {
 		gcpCredentials, err := ioutil.ReadFile(credentialsFile)
 		if err != nil {
 			log.Fatal("Failed to create GCP credentials: ", err.Error())
-		} else {
-			gcpClient, err := gcp.NewClient(log, sfTime, gcpCredentials, bucketName)
-			if err != nil {
-				log.Fatal("Failed to create GCP client: ", err.Error())
-			}
-			iaasClients = append(iaasClients, gcpClient)
 		}
+		gcpClient, err := gcp.NewClient(log, sfTime, gcpCredentials, bucketName)
+		if err != nil {
+			log.Fatal("Failed to create GCP client: ", err.Error())
+		}
+		iaasClients = append(iaasClients, gcpClient)
 	}
 
 	// BucketClient
@@ -139,13 +137,12 @@ func main() {
 		gcpCredentials, err := ioutil.ReadFile(credentialsFile)
 		if err != nil {
 			log.Fatal("Failed to create Bucket (GCP) credentials: ", err.Error())
-		} else {
-			gcpClient, err := gcp.NewClient(log, sfTime, gcpCredentials, bucketName)
-			if err != nil {
-				log.Fatal("Failed to create Bucket (GCP) client: ", err.Error())
-			}
-			bucketClient = gcpClient
 		}
+		gcpClient, err := gcp.NewClient(log, sfTime, gcpCredentials, bucketName)
+		if err != nil {
+			log.Fatal("Failed to create Bucket (GCP) client: ", err.Error())
+		}
+		bucketClient = gcpClient
 	}
 
 	// AWS Client
@@ -156,17 +153,13 @@ func main() {
 		accountNumber := os.Getenv("AWS_MASTER_ACCOUNT_NUMBER")
 		if az == "" || bucketName == "" || accountNumber == "" {
 			log.Fatal("AWS requires AWS_REGION, AWS_BUCKET_NAME, and AWS_MASTER_ACCOUNT_NUMBER environment variables to be set")
-		} else {
-			sess, err := session.NewSession(&awssdk.Config{
-				Region: awssdk.String(az),
-			})
-			if err != nil {
-				log.Fatal("Failed to create AWS credentials: ", err.Error())
-			} else {
-				awsClient := aws.NewClient(log, sfTime, az, bucketName, accountNumber, sess)
-				iaasClients = append(iaasClients, awsClient)
-			}
 		}
+		sess, err := session.NewSession(&awssdk.Config{Region: awssdk.String(az)})
+		if err != nil {
+			log.Fatal("Failed to create AWS credentials: ", err.Error())
+		}
+		awsClient := aws.NewClient(log, sfTime, az, bucketName, accountNumber, sess)
+		iaasClients = append(iaasClients, awsClient)
 	}
 
 	usageDataJob := usagedatajob.NewJob(log, sfTime, iaasClients, bucketClient, dbClient, keepFile, saveToBucket, saveToDB)
