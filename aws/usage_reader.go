@@ -39,42 +39,40 @@ type Usage struct {
 	TaxAmount              string `csv:"TaxAmount"`
 	TaxType                string `csv:"TaxType"`
 	TotalCost              string `csv:"TotalCost"`
+	DailySpend             string `csv:"-"`
 	AvailabilityZone       string `csv:"-"`
 }
 
 type UsageReader struct {
-	UsageReports []*Usage
-	log          *logrus.Logger
-	location     *time.Location
+	az       string
+	log      *logrus.Logger
+	location *time.Location
 }
 
-func NewUsageReader(log *logrus.Logger, location *time.Location, monthlyUsage []byte, az string) (*UsageReader, error) {
-	reports, err := generateReports(monthlyUsage)
-	if err != nil {
-		return nil, err
-	}
-	for _, r := range reports {
-		r.AvailabilityZone = az
-	}
+func NewUsageReader(log *logrus.Logger, location *time.Location, az string) *UsageReader {
 	return &UsageReader{
-		UsageReports: reports,
-		log:          log,
-		location:     location,
-	}, nil
+		az:       az,
+		log:      log,
+		location: location,
+	}
 }
 
-func generateReports(monthlyUsage []byte) ([]*Usage, error) {
+func (ur *UsageReader) GenerateReports(monthlyUsage []byte) ([]*Usage, error) {
 	usages := []*Usage{}
 	err := gocsv.UnmarshalBytes(monthlyUsage, &usages)
 	if err != nil {
 		return nil, err
 	}
+
+	for _, usage := range usages {
+		usage.AvailabilityZone = ur.az
+	}
 	return usages, nil
 }
 
-func (ur *UsageReader) Normalize() datamodels.Reports {
+func (ur *UsageReader) Normalize(usageReports []*Usage) datamodels.Reports {
 	var reports datamodels.Reports
-	for _, usage := range ur.UsageReports {
+	for _, usage := range usageReports {
 		if usage.ProductCode == "" { // skip lines that total up accounts
 			continue
 		}

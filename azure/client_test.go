@@ -85,9 +85,11 @@ var _ = Describe("Azure", func() {
 		})
 
 		It("returns a parsable csv", func() {
-			usageReader, err := azure.NewUsageReader(logrus.New(), time.Now().Location(), azureMonthlyUsage.CSV)
+			usageReader := azure.NewUsageReader(logrus.New(), time.Now().Location())
+			reports, err := usageReader.GenerateReports(azureMonthlyUsage.CSV)
+
 			Expect(err).NotTo(HaveOccurred())
-			Expect(usageReader.UsageReports[0].SubscriptionName).NotTo(BeEmpty())
+			Expect(reports[0].SubscriptionName).NotTo(BeEmpty())
 		})
 	})
 })

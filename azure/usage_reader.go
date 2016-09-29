@@ -44,24 +44,18 @@ type Usage struct {
 }
 
 type UsageReader struct {
-	UsageReports []*Usage
-	log          *logrus.Logger
-	location     *time.Location
+	log      *logrus.Logger
+	location *time.Location
 }
 
-func NewUsageReader(log *logrus.Logger, location *time.Location, monthlyUsage []byte) (*UsageReader, error) {
-	reports, err := generateReports(monthlyUsage)
-	if err != nil {
-		return nil, err
-	}
+func NewUsageReader(log *logrus.Logger, location *time.Location) *UsageReader {
 	return &UsageReader{
-		UsageReports: reports,
-		log:          log,
-		location:     location,
-	}, nil
+		log:      log,
+		location: location,
+	}
 }
 
-func generateReports(monthlyUsage []byte) ([]*Usage, error) {
+func (ur *UsageReader) GenerateReports(monthlyUsage []byte) ([]*Usage, error) {
 	usages := []*Usage{}
 	err := gocsv.UnmarshalBytes(monthlyUsage, &usages)
 	if err != nil {
@@ -70,9 +64,9 @@ func generateReports(monthlyUsage []byte) ([]*Usage, error) {
 	return usages, nil
 }
 
-func (ur *UsageReader) Normalize() datamodels.Reports {
+func (ur *UsageReader) Normalize(usageReports []*Usage) datamodels.Reports {
 	var reports datamodels.Reports
-	for _, usage := range ur.UsageReports {
+	for _, usage := range usageReports {
 		month := time.Now().In(ur.location).Month()
 		m, _ := strconv.Atoi(usage.Month)
 		if m < 1 || m > 12 {

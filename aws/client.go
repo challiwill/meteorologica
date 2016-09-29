@@ -51,13 +51,15 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	}
 	c.log.Debug("Got Monthly AWS usage")
 
-	usageReader, err := NewUsageReader(c.log, c.location, awsMonthlyUsage.CSV, c.Region)
+	usageReader := NewUsageReader(c.log, c.location, c.Region)
+
+	reports, err := usageReader.GenerateReports(awsMonthlyUsage.CSV)
 	if err != nil {
 		c.log.Error("Failed to parse AWS usage")
 		return datamodels.Reports{}, err
 	}
 
-	return usageReader.Normalize(), nil
+	return usageReader.Normalize(reports), nil
 }
 
 func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {

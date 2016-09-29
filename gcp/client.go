@@ -71,13 +71,14 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 
 	reports := datamodels.Reports{}
 	c.log.Debug("Got monthly GCP usage")
+	usageReader := NewUsageReader(c.log, c.location)
 	for i, usage := range gcpMonthlyUsage.DailyUsage {
-		usageReader, err := NewUsageReader(c.log, c.location, usage.CSV)
+		report, err := usageReader.GenerateReports(usage.CSV)
 		if err != nil {
 			c.log.Error("Failed to parse GCP usage for day", i+1)
 			continue
 		}
-		reports = append(reports, usageReader.Normalize()...)
+		reports = append(reports, usageReader.Normalize(report)...)
 	}
 
 	if len(reports) == 0 {
