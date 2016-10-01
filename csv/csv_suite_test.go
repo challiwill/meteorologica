@@ -9,5 +9,5 @@ import (
 
 func TestCsv(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Csv Suite")
+	RunSpecs(t, "CSV Suite")
 }

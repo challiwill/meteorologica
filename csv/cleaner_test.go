@@ -10,10 +10,42 @@ import (
 var _ = Describe("Cleaner", func() {
 	var (
 		cleaner *Cleaner
+		err     error
 	)
 
-	BeforeEach(func() {
-		cleaner = NewCleaner()
+	Describe("NewCleaner", func() {
+		Context("with a negative expected length", func() {
+			BeforeEach(func() {
+				cleaner, err = NewCleaner(-1)
+			})
+
+			It("errors", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("positive integer"))
+			})
+		})
+
+		Context("with a zero expected length", func() {
+			BeforeEach(func() {
+				cleaner, err = NewCleaner(0)
+			})
+
+			It("errors", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("positive integer"))
+			})
+		})
+
+		Context("with a positive expected length", func() {
+			BeforeEach(func() {
+				cleaner, err = NewCleaner(1)
+			})
+
+			It("works", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cleaner).NotTo(BeNil())
+			})
+		})
 	})
 
 	Describe("RemoveEmptyRows", func() {
@@ -24,6 +56,8 @@ var _ = Describe("Cleaner", func() {
 			)
 
 			BeforeEach(func() {
+				cleaner, err = NewCleaner(3)
+				Expect(err).NotTo(HaveOccurred())
 				original = CSV{
 					[]string{"first header", " second hearder", "third header"},
 					[]string{"one value", "two value", "three value"},
@@ -56,6 +90,8 @@ var _ = Describe("Cleaner", func() {
 			)
 
 			BeforeEach(func() {
+				cleaner, err = NewCleaner(3)
+				Expect(err).NotTo(HaveOccurred())
 				original = CSV{
 					[]string{"first header", " second hearder", "third header"},
 					[]string{"fewer", "values"},
@@ -101,7 +137,7 @@ var _ = Describe("Cleaner", func() {
 			})
 
 			JustBeforeEach(func() {
-				cleaned = cleaner.RemoveIrregularLengthRows(original, 3)
+				cleaned = cleaner.RemoveIrregularLengthRows(original)
 			})
 
 			It("removes rows that don't have the right length", func() {

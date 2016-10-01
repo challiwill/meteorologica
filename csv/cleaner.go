@@ -1,26 +1,27 @@
 package csv
 
-import "strings"
+import (
+	"errors"
+	"strings"
 
-type CSV [][]string
+	"github.com/gocarina/gocsv"
+)
 
-type Cleaner struct{}
+type Cleaner struct {
+	expectedRowLength int
+}
 
-func NewCleaner() *Cleaner {
-	return new(Cleaner)
+func NewCleaner(expectedLen int) (*Cleaner, error) {
+	if expectedLen < 1 {
+		return nil, errors.New("The expected row length must be a positive integer greater than zero")
+	}
+	return &Cleaner{expectedRowLength: expectedLen}, nil
 }
 
 func (c *Cleaner) RemoveEmptyRows(original CSV) CSV {
 	cleaned := CSV{}
 	for _, row := range original {
-		notEmpty := false
-		for _, record := range row {
-			if isNotEmptyString(record) {
-				notEmpty = true
-				break
-			}
-		}
-		if notEmpty {
+		if c.IsFilledRow(row) {
 			cleaned = append(cleaned, row)
 		}
 	}
@@ -28,18 +29,41 @@ func (c *Cleaner) RemoveEmptyRows(original CSV) CSV {
 	return cleaned
 }
 
-func (c *Cleaner) RemoveIrregularLengthRows(original CSV, expectedLen int) CSV {
+func (c *Cleaner) RemoveIrregularLengthRows(original CSV) CSV {
 	cleaned := CSV{}
 	for _, row := range original {
-		if len(row) == expectedLen {
+		if c.IsRegularLengthRow(row) {
 			cleaned = append(cleaned, row)
 		}
 	}
 
 	return cleaned
+}
+
+func (c *Cleaner) IsRegularLengthRow(row []string) bool {
+	return len(row) == c.expectedRowLength
+}
+
+func (c *Cleaner) IsFilledRow(row []string) bool {
+	notEmpty := false
+	for _, record := range row {
+		if isNotEmptyString(record) {
+			notEmpty = true
+			break
+		}
+	}
+	return notEmpty
 }
 
 func isNotEmptyString(test string) bool {
 	trimmed := strings.TrimSpace(test)
 	return trimmed != ""
+}
+
+func GenerateReports(monthlyUsageReader *ReaderCleaner, usages interface{}) error {
+	err := gocsv.UnmarshalCSV(monthlyUsageReader, &usages)
+	if err != nil {
+		return err
+	}
+	return nil
 }
