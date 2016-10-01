@@ -10,3 +10,4 @@
 * allow storage bucket to be different if desired (or remove storage bucket entirely)
 * backfill tests where necessary
 * add configurable frontend?
+* make normalizer generic?

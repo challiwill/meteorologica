@@ -2,12 +2,15 @@ package azure
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
 
+	"bytes"
+	"io/ioutil"
+
 	"github.com/Sirupsen/logrus"
+	"github.com/challiwill/meteorologica/csv"
 	"github.com/challiwill/meteorologica/datamodels"
 )
 
@@ -19,10 +22,6 @@ type UsageReport struct {
 type UsageReports struct {
 	ContractVersion string        `json:"contract_version"`
 	Months          []UsageReport `json:"AvailableMonths"`
-}
-
-type DetailedUsageReport struct {
-	CSV []byte
 }
 
 type Client struct {
@@ -51,32 +50,28 @@ func (c Client) Name() string {
 
 func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	c.log.Info("Getting monthly Azure usage...")
-	azureMonthlyUsage, err := c.MonthlyUsageReport()
+	azureMonthlyUsage, err := c.GetBillingData()
 	if err != nil {
 		c.log.Error("Failed to get Azure monthly usage")
 		return datamodels.Reports{}, err
 	}
 	c.log.Debug("Got monthly Azure usage")
 
-	usageReader := NewUsageReader(c.log, c.location)
-	reports, err := usageReader.GenerateReports(azureMonthlyUsage.CSV)
+	usageReader, err := csv.NewReaderCleaner(bytes.NewReader(azureMonthlyUsage), 30)
+	if err != nil {
+		return nil, err
+	}
+	reports := []*Usage{}
+	err = csv.GenerateReports(usageReader, reports)
 	if err != nil {
 		c.log.Error("Failed to parse Azure usage")
 		return datamodels.Reports{}, err
 	}
 
-	return usageReader.Normalize(reports), nil
+	return NewNormalizer(c.log, c.location).Normalize(reports), nil
 }
 
-func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
-	csvBody, err := c.GetCSV()
-	if err != nil {
-		return DetailedUsageReport{}, err
-	}
-	return MakeDetailedUsageReport(csvBody), nil
-}
-
-func (c Client) GetCSV() ([]byte, error) {
+func (c Client) GetBillingData() ([]byte, error) {
 	req, err := http.NewRequest("GET", strings.Join([]string{c.URL, "rest", c.enrollment, "usage-report?type=detail"}, "/"), nil)
 	if err != nil {
 		return nil, err
@@ -85,24 +80,13 @@ func (c Client) GetCSV() ([]byte, error) {
 	req.Header.Add("api-version", "1.0")
 
 	resp, err := c.client.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("Azure responded with error: %s", resp.Status)
 	}
-	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
-}
-
-func MakeDetailedUsageReport(body []byte) DetailedUsageReport {
-	csvLines := strings.SplitN(string(body), "\n", 3) // for azure the first two lines are garbage
-	csvFirstTwoLinesRemoved := csvLines[2]
-	csvStrippedTrailingComma := strings.Replace(csvFirstTwoLinesRemoved, ",\r\n", "\r\n", -1)
-	return DetailedUsageReport{CSV: []byte(csvStrippedTrailingComma)}
+	return ioutil.ReadAll(resp.Body)
 }

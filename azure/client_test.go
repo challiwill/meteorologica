@@ -1,7 +1,6 @@
 package azure_test
 
 import (
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -35,7 +34,7 @@ var _ = Describe("Azure", func() {
 		)
 
 		JustBeforeEach(func() {
-			monthlyUsageReport, err = client.GetCSV()
+			monthlyUsageReport, err = client.GetBillingData()
 		})
 
 		Context("When azure returns valid data", func() {
@@ -64,55 +63,7 @@ var _ = Describe("Azure", func() {
 		})
 	})
 
-	Describe("MakeDetailedUsageReport", func() {
-		var (
-			azureMonthlyUsage azure.DetailedUsageReport
-			azureDataFile     []byte
-			err               error
-		)
-
-		BeforeEach(func() {
-			azureDataFile, err = ioutil.ReadFile("../testfixtures/short-azure.csv")
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		AfterEach(func() {
-			// delete azure.csv file
-		})
-
-		JustBeforeEach(func() {
-			azureMonthlyUsage = azure.MakeDetailedUsageReport(azureDataFile)
-		})
-
-		It("returns a parsable csv", func() {
-			usageReader := azure.NewUsageReader(logrus.New(), time.Now().Location())
-			reports, err := usageReader.GenerateReports(azureMonthlyUsage.CSV)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(reports[0].SubscriptionName).NotTo(BeEmpty())
-		})
-	})
 })
-
-var availableMonthsResponse = `
-{
-	"object_type" : "Usage",
-	"contract_version" : "1.0",
-	"AvailableMonths":
-	[
-		{
-			"Month":"2014-02",
-			"LinkToDownloadSummaryReport":"/rest/100100/usagereport?month=2014-02&type=summary",
-			"LinkToDownloadDetailReport":"/rest/100100/usagereport?month=2014-02&type=detail"
-		}
-		,{
-			"Month":"2014-03",
-			"LinkToDownloadSummaryReport":"/rest/100100/usagereport?month=2014-03&type=summary",
-			"LinkToDownloadDetailReport":"/rest/100100/usage-report?month=2014-03&type=detail"
-		}
-	]
-}
-`
 
 var monthlyUsageResponse = `
 one, two, three, four, five

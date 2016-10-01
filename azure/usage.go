@@ -1,14 +1,5 @@
 package azure
 
-import (
-	"strconv"
-	"time"
-
-	"github.com/Sirupsen/logrus"
-	"github.com/challiwill/meteorologica/datamodels"
-	"github.com/gocarina/gocsv"
-)
-
 type Usage struct {
 	AccountOwnerId         string `csv:"AccountOwnerId"`
 	AccountName            string `csv:"Account Name"`
@@ -41,52 +32,4 @@ type Usage struct {
 	CostCenter             string `csv:"Cost Center"`
 	UnitOfMeasure          string `csv:"Unit Of Measure"`
 	ResourceGroup          string `csv:"Resource Group"`
-}
-
-type UsageReader struct {
-	log      *logrus.Logger
-	location *time.Location
-}
-
-func NewUsageReader(log *logrus.Logger, location *time.Location) *UsageReader {
-	return &UsageReader{
-		log:      log,
-		location: location,
-	}
-}
-
-func (ur *UsageReader) GenerateReports(monthlyUsage []byte) ([]*Usage, error) {
-	usages := []*Usage{}
-	err := gocsv.UnmarshalBytes(monthlyUsage, &usages)
-	if err != nil {
-		return nil, err
-	}
-	return usages, nil
-}
-
-func (ur *UsageReader) Normalize(usageReports []*Usage) datamodels.Reports {
-	var reports datamodels.Reports
-	for _, usage := range usageReports {
-		month := time.Now().In(ur.location).Month()
-		m, _ := strconv.Atoi(usage.Month)
-		if m < 1 || m > 12 {
-			ur.log.Warn("%s month is invalid, defaulting to this %s\n", usage.Month, time.Now().In(ur.location).Month().String())
-		} else {
-			month = time.Month(m)
-		}
-		reports = append(reports, datamodels.Report{
-			AccountNumber: usage.SubscriptionGuid,
-			AccountName:   usage.SubscriptionName,
-			Day:           usage.Day,
-			Month:         month.String(),
-			Year:          usage.Year,
-			ServiceType:   usage.ConsumedService,
-			UsageQuantity: usage.ConsumedQuantity,
-			Cost:          usage.ExtendedCost,
-			Region:        usage.MeterRegion,
-			UnitOfMeasure: usage.UnitOfMeasure,
-			IAAS:          "Azure",
-		})
-	}
-	return reports
 }
