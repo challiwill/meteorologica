@@ -37,10 +37,10 @@ var (
 func main() {
 	flag.Parse()
 
-	getAzure := *azureFlag
-	getGCP := *gcpFlag
-	getAWS := *awsFlag
-	getAll := !getAzure && !getGCP && !getAWS
+	getAll := !(*azureFlag) && !(*gcpFlag) && !(*awsFlag)
+	getAzure := *azureFlag || getAll
+	getGCP := *gcpFlag || getAll
+	getAWS := *awsFlag || getAll
 
 	keepFile := *fileFlag
 	localOnly := *localOnlyFlag
@@ -93,7 +93,7 @@ func main() {
 	var bucketClient usagedatajob.BucketClient
 
 	// Azure Client
-	if getAzure || getAll {
+	if getAzure {
 		log.Debug("Creating Azure Client")
 		accessKey := os.Getenv("AZURE_ACCESS_KEY")
 		enrollmentNumber := os.Getenv("AZURE_ENROLLMENT_NUMBER")
@@ -105,7 +105,7 @@ func main() {
 	}
 
 	// GCP Client
-	if getGCP || getAll {
+	if getGCP {
 		log.Debug("Creating GCP Client")
 		credentialsFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
 		bucketName := os.Getenv("GCP_BUCKET_NAME")
@@ -146,7 +146,7 @@ func main() {
 	}
 
 	// AWS Client
-	if getAWS || getAll {
+	if getAWS {
 		log.Debug("Creating AWS Client")
 		az := os.Getenv("AWS_REGION")
 		bucketName := os.Getenv("AWS_BUCKET_NAME")
