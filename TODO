@@ -1,3 +1,4 @@
+* add debug logs everywhere
 * update CSV reading to not be so janky (what if format changes and deleting the last two lines deletes real data :/ )
 * set up proper db migration framework
 * use proper data types in database

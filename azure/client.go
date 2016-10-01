@@ -52,7 +52,6 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	c.log.Info("Getting monthly Azure usage...")
 	azureMonthlyUsage, err := c.GetBillingData()
 	if err != nil {
-		c.log.Error("Failed to get Azure monthly usage")
 		return datamodels.Reports{}, err
 	}
 	c.log.Debug("Got monthly Azure usage")
@@ -62,9 +61,8 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 		return nil, err
 	}
 	reports := []*Usage{}
-	err = csv.GenerateReports(usageReader, reports)
+	err = csv.GenerateReports(usageReader, &reports)
 	if err != nil {
-		c.log.Error("Failed to parse Azure usage")
 		return datamodels.Reports{}, err
 	}
 

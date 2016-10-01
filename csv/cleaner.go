@@ -61,7 +61,7 @@ func isNotEmptyString(test string) bool {
 }
 
 func GenerateReports(monthlyUsageReader *ReaderCleaner, usages interface{}) error {
-	err := gocsv.UnmarshalCSV(monthlyUsageReader, &usages)
+	err := gocsv.UnmarshalCSV(monthlyUsageReader, usages)
 	if err != nil {
 		return err
 	}
