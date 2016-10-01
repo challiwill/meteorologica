@@ -9,5 +9,5 @@ import (
 
 func TestGcp(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Gcp Suite")
+	RunSpecs(t, "GCP Suite")
 }
