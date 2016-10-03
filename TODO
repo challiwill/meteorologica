@@ -1,14 +1,24 @@
+CODE CLIMATE
 * add debug logs everywhere
-* update CSV reading to not be so janky (what if format changes and deleting the last two lines deletes real data :/ )
+* extract each IAAS as a resource or something so that new resources can be added to calculate billing info from (eg Pagerduty)
+* backfill tests where necessary
+* make normalizer generic
+
+PATTERNS/CONSISTENCY
+* use csv ReaderCleaner for AWS
+* use csv ReaderCleaner for GCP
+
+DATABASE
 * set up proper db migration framework
 * use proper data types in database
-* preperly get DB credentials from env
+* set up local db for testing
+
+CONFIGURATION
+* properly get DB credentials from env
 * create library (or find library) to load settings cleanly
 * set log level @ env var level also
-* set up local db for testing
-* calculate and store `Monthly Spend` for all IAAS
-* extract each IAAS as a resource or something so that new resources can be added to calculate billing info from (eg Pagerduty)
 * allow storage bucket to be different if desired (or remove storage bucket entirely)
-* backfill tests where necessary
-* add configurable frontend?
-* make normalizer generic?
+
+FEATURES
+* calculate and store `Monthly Spend` for all IAAS
+* add configurable frontend
