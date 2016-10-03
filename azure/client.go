@@ -70,9 +70,12 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 }
 
 func (c Client) GetBillingData() ([]byte, error) {
-	req, err := http.NewRequest("GET", strings.Join([]string{c.URL, "rest", c.enrollment, "usage-report?type=detail"}, "/"), nil)
+	reqString := strings.Join([]string{c.URL, "rest", c.enrollment, "usage-report?type=detail"}, "/")
+	c.log.Debug("Making Azure billing request to address: ", reqString)
+
+	req, err := http.NewRequest("GET", reqString, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Creating request for Azure failed: ", err)
 	}
 	req.Header.Add("authorization", "bearer "+c.accessKey)
 	req.Header.Add("api-version", "1.0")
@@ -80,7 +83,7 @@ func (c Client) GetBillingData() ([]byte, error) {
 	resp, err := c.client.Do(req)
 	defer resp.Body.Close()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Making request to Azure failed: ", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("Azure responded with error: %s", resp.Status)

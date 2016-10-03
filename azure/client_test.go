@@ -27,7 +27,17 @@ var _ = Describe("Azure", func() {
 		azureServer.Close()
 	})
 
-	Describe("GetCSV", func() {
+	Describe("Name", func() {
+		It("returns the IAAS name", func() {
+			Expect(client.Name()).To(Equal("Azure"))
+		})
+	})
+
+	XDescribe("GetNormalizedUsage", func() {
+		It("works", func() {})
+	})
+
+	Describe("GetBillingData", func() {
 		var (
 			monthlyUsageReport []byte
 			err                error
@@ -37,7 +47,7 @@ var _ = Describe("Azure", func() {
 			monthlyUsageReport, err = client.GetBillingData()
 		})
 
-		Context("When azure returns valid data", func() {
+		Context("when azure returns valid data", func() {
 			BeforeEach(func() {
 				azureServer.AppendHandlers(
 					ghttp.CombineHandlers(
@@ -61,8 +71,29 @@ var _ = Describe("Azure", func() {
 				Expect(monthlyUsageReport).To(Equal([]byte(monthlyUsageReport)))
 			})
 		})
-	})
 
+		Context("when azure returns an error", func() {
+			BeforeEach(func() {
+				azureServer.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("GET", "/rest/1337/usage-report", "type=detail"),
+						ghttp.VerifyHeaderKV("authorization", "bearer some-key"),
+						ghttp.VerifyHeaderKV("api-version", "1.0"),
+						ghttp.RespondWith(http.StatusInternalServerError, ""),
+					),
+				)
+			})
+
+			It("errors", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("responded with error"))
+			})
+
+			It("makes a GET request to azure", func() {
+				Expect(azureServer.ReceivedRequests()).To(HaveLen(1))
+			})
+		})
+	})
 })
 
 var monthlyUsageResponse = `
