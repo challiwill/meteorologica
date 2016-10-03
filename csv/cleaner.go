@@ -3,8 +3,6 @@ package csv
 import (
 	"errors"
 	"strings"
-
-	"github.com/gocarina/gocsv"
 )
 
 type Cleaner struct {
@@ -58,12 +56,4 @@ func (c *Cleaner) IsFilledRow(row []string) bool {
 func isNotEmptyString(test string) bool {
 	trimmed := strings.TrimSpace(test)
 	return trimmed != ""
-}
-
-func GenerateReports(monthlyUsageReader *ReaderCleaner, usages interface{}) error {
-	err := gocsv.UnmarshalCSV(monthlyUsageReader, usages)
-	if err != nil {
-		return err
-	}
-	return nil
 }
