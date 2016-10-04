@@ -1,10 +1,11 @@
 package azure
 
 import (
-	"github.com/Sirupsen/logrus"
-	"github.com/challiwill/meteorologica/datamodels"
 	"strconv"
 	"time"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/challiwill/meteorologica/datamodels"
 )
 
 type Normalizer struct {
@@ -20,12 +21,13 @@ func NewNormalizer(log *logrus.Logger, location *time.Location) *Normalizer {
 }
 
 func (ur *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
+	ur.log.Debug("Normalizing Azure data...")
 	var reports datamodels.Reports
 	for _, usage := range usageReports {
 		month := time.Now().In(ur.location).Month()
 		m, _ := strconv.Atoi(usage.Month)
 		if m < 1 || m > 12 {
-			ur.log.Warn("%s month is invalid, defaulting to this %s\n", usage.Month, time.Now().In(ur.location).Month().String())
+			ur.log.Warnf("%s month is invalid, defaulting to this %s", usage.Month, time.Now().In(ur.location).Month().String())
 		} else {
 			month = time.Month(m)
 		}

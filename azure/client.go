@@ -56,16 +56,15 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	}
 	c.log.Debug("Got monthly Azure usage")
 
-	usageReader, err := csv.NewReaderCleaner(bytes.NewReader(azureMonthlyUsage), 30)
+	usageReader, err := csv.NewReaderCleaner(bytes.NewReader(azureMonthlyUsage), 31)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to Read or Clean Azure reports: %s", err.Error())
 	}
 	reports := []*Usage{}
 	err = csv.GenerateReports(usageReader, &reports)
 	if err != nil {
-		return datamodels.Reports{}, err
+		return datamodels.Reports{}, fmt.Errorf("Failed to Generate Reports for Azure: %s", err.Error())
 	}
-
 	return NewNormalizer(c.log, c.location).Normalize(reports), nil
 }
 
@@ -75,14 +74,14 @@ func (c Client) GetBillingData() ([]byte, error) {
 
 	req, err := http.NewRequest("GET", reqString, nil)
 	if err != nil {
-		return nil, fmt.Errorf("Creating request for Azure failed: ", err)
+		return nil, fmt.Errorf("Creating request for Azure failed: %s", err)
 	}
 	req.Header.Add("authorization", "bearer "+c.accessKey)
 	req.Header.Add("api-version", "1.0")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("Making request to Azure failed: ", err)
+		return nil, fmt.Errorf("Making request to Azure failed: %s", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("Azure responded with error: %s", resp.Status)

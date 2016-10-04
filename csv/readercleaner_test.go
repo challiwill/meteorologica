@@ -207,17 +207,47 @@ var _ = Describe("ReaderCleaner", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("removes the empty and irregular length rows", func() {
+			It("removes the empty and short length rows, truncated the longer ones", func() {
 				Expect(reports).To(Equal([][]string{
 					[]string{"a", "first", "string"},
+					[]string{"this", "one", "is"},
 					[]string{"a", "fourth", "string"},
 				}))
 			})
 		})
 
+		Context("when all rows are short", func() {
+			BeforeEach(func() {
+				reader.ReadAllReturns([][]string{
+					[]string{"a", "string"},
+					[]string{"shorty"},
+				}, nil)
+			})
+
+			It("returns a helpful error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Removing short rows resulted in empty report"))
+			})
+		})
+
+		Context("when all rows are empty", func() {
+			BeforeEach(func() {
+				reader.ReadAllReturns([][]string{
+					[]string{"", "", ""},
+					[]string{"", "", ""},
+				}, nil)
+			})
+
+			It("returns a helpful error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Removing empty rows resulted in empty report"))
+			})
+		})
+
 		Context("when the read returns nil", func() {
-			It("does not error", func() {
-				Expect(err).NotTo(HaveOccurred())
+			It("errors", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Report is empty"))
 			})
 		})
 

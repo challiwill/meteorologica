@@ -27,6 +27,30 @@ func (c *Cleaner) RemoveEmptyRows(original CSV) CSV {
 	return cleaned
 }
 
+func (c *Cleaner) RemoveShortAndTruncateLongRows(original CSV) CSV {
+	cleaned := CSV{}
+	for _, row := range original {
+		if len(row) >= c.expectedRowLength {
+			cleaned = append(cleaned, row[:c.expectedRowLength])
+		}
+	}
+
+	return cleaned
+}
+
+func (c *Cleaner) TruncateRows(original CSV) CSV {
+	cleaned := CSV{}
+	for _, row := range original {
+		if len(row) >= c.expectedRowLength {
+			cleaned = append(cleaned, row[:c.expectedRowLength])
+			continue
+		}
+		cleaned = append(cleaned, row)
+	}
+
+	return cleaned
+}
+
 func (c *Cleaner) RemoveIrregularLengthRows(original CSV) CSV {
 	cleaned := CSV{}
 	for _, row := range original {

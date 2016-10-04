@@ -117,6 +117,69 @@ var _ = Describe("Cleaner", func() {
 		})
 	})
 
+	Describe("RemoveShortAndTruncateLongRows", func() {
+		Context("with valid csv", func() {
+			var (
+				cleaned  CSV
+				original CSV
+			)
+
+			BeforeEach(func() {
+				original = CSV{
+					[]string{"three", "is", "key"},
+					[]string{"fewer", "values"},
+					[]string{"more", "really", "is", "better"},
+					[]string{"", "", "", "", ""},
+				}
+			})
+
+			JustBeforeEach(func() {
+				cleaned = cleaner.RemoveShortAndTruncateLongRows(original)
+			})
+
+			It("removes rows that don't have the right length", func() {
+				expectedCSV := CSV{
+					[]string{"three", "is", "key"},
+					[]string{"more", "really", "is"},
+					[]string{"", "", ""},
+				}
+				Expect(cleaned).To(Equal(expectedCSV))
+			})
+		})
+	})
+
+	Describe("TruncateRows", func() {
+		Context("with valid csv", func() {
+			var (
+				cleaned  CSV
+				original CSV
+			)
+
+			BeforeEach(func() {
+				original = CSV{
+					[]string{"three", "is", "key"},
+					[]string{"fewer", "values"},
+					[]string{"more", "really", "is", "better"},
+					[]string{"", "", "", "", ""},
+				}
+			})
+
+			JustBeforeEach(func() {
+				cleaned = cleaner.TruncateRows(original)
+			})
+
+			It("removes rows that don't have the right length", func() {
+				expectedCSV := CSV{
+					[]string{"three", "is", "key"},
+					[]string{"fewer", "values"},
+					[]string{"more", "really", "is"},
+					[]string{"", "", ""},
+				}
+				Expect(cleaned).To(Equal(expectedCSV))
+			})
+		})
+	})
+
 	Describe("RemoveIrregularLengthRows", func() {
 		Context("with valid csv", func() {
 			var (
