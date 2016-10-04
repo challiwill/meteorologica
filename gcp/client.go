@@ -1,6 +1,7 @@
 package gcp
 
 import (
+	"bytes"
 	"errors"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/challiwill/meteorologica/csv"
 	"github.com/challiwill/meteorologica/datamodels"
 
 	"golang.org/x/oauth2"
@@ -71,14 +73,28 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 
 	reports := datamodels.Reports{}
 	c.log.Debug("Got monthly GCP usage")
-	usageReader := NewUsageReader(c.log, c.location)
+	usageReader := NewNormalizer(c.log, c.location)
 	for i, usage := range gcpMonthlyUsage.DailyUsage {
-		report, err := usageReader.GenerateReports(usage.CSV)
+		readerCleaner, err := csv.NewReaderCleaner(bytes.NewReader(usage.CSV), 15)
 		if err != nil {
-			c.log.Error("Failed to parse GCP usage for day", i+1)
-			continue
+			return nil, err
 		}
-		reports = append(reports, usageReader.Normalize(report)...)
+		dailyReport := []*Usage{}
+		err = csv.GenerateReports(readerCleaner, &dailyReport)
+		if err != nil {
+			// try again with 18 columns as it is sometimes
+			readerCleaner, err := csv.NewReaderCleaner(bytes.NewReader(usage.CSV), 18)
+			if err != nil {
+				return nil, err
+			}
+			dailyReport := []*Usage{}
+			err = csv.GenerateReports(readerCleaner, &dailyReport)
+			if err != nil {
+				c.log.Errorf("Failed to parse GCP usage for day: %d %s: %s", i+1, time.Now().In(c.location).Month().String(), err.Error())
+				continue
+			}
+		}
+		reports = append(reports, usageReader.Normalize(dailyReport)...)
 	}
 
 	if len(reports) == 0 {
