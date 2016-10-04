@@ -43,28 +43,12 @@ var _ = Describe("Gcp", func() {
 		})
 	})
 
+	XDescribe("GetNormalizedUsage", func() {
+		It("works", func() {})
+	})
+
 	XDescribe("GetBillingData", func() {
-		var (
-			usageReport DetailedUsageReport
-			err         error
-		)
-
-		JustBeforeEach(func() {
-			usageReport, err = client.GetBillingData()
-		})
-
-		Context("when gcp returns the bucket", func() {
-			BeforeEach(func() {
-			})
-
-			It("does not error", func() {
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("returns the buckets contents", func() {
-				Expect(usageReport).NotTo(BeEmpty())
-			})
-		})
+		It("works", func() {})
 	})
 
 	Describe("DailyUsageReport", func() {
