@@ -21,6 +21,12 @@ var _ = Describe("Gcp", func() {
 		}
 	})
 
+	Describe("Name", func() {
+		It("returns the IAAS name", func() {
+			Expect(client.Name()).To(Equal("GCP"))
+		})
+	})
+
 	Describe("MonthlyUsageReport", func() {
 		var (
 			usageReport gcp.DetailedUsageReport
