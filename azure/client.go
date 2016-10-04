@@ -81,13 +81,13 @@ func (c Client) GetBillingData() ([]byte, error) {
 	req.Header.Add("api-version", "1.0")
 
 	resp, err := c.client.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		return nil, fmt.Errorf("Making request to Azure failed: ", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("Azure responded with error: %s", resp.Status)
 	}
+	defer resp.Body.Close()
 
 	return ioutil.ReadAll(resp.Body)
 }

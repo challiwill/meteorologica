@@ -3,6 +3,7 @@ package gcp
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -31,15 +32,13 @@ type DetailedUsageReport struct {
 	DailyUsage []DailyUsageReport
 }
 
-type DailyUsageReport struct {
-	CSV []byte
-}
+type DailyUsageReport []byte
 
 type Client struct {
 	StorageService StorageService
 	BucketName     string
-	log            *logrus.Logger
-	location       *time.Location
+	Log            *logrus.Logger
+	Location       *time.Location
 }
 
 func NewClient(log *logrus.Logger, location *time.Location, jsonCredentials []byte, bucketName string) (*Client, error) {
@@ -54,8 +53,8 @@ func NewClient(log *logrus.Logger, location *time.Location, jsonCredentials []by
 	return &Client{
 		StorageService: &storageService{service: service},
 		BucketName:     bucketName,
-		log:            log,
-		location:       location,
+		Log:            log,
+		Location:       location,
 	}, nil
 }
 
@@ -64,18 +63,18 @@ func (c Client) Name() string {
 }
 
 func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
-	c.log.Info("Getting monthly GCP usage...")
-	gcpMonthlyUsage, err := c.MonthlyUsageReport()
+	c.Log.Info("Getting monthly GCP usage...")
+	gcpMonthlyUsage, err := c.GetBillingData()
 	if err != nil {
-		c.log.Error("Failed to get GCP monthly usage")
+		c.Log.Error("Failed to get GCP monthly usage")
 		return datamodels.Reports{}, err
 	}
 
 	reports := datamodels.Reports{}
-	c.log.Debug("Got monthly GCP usage")
-	usageReader := NewNormalizer(c.log, c.location)
+	c.Log.Debug("Got monthly GCP usage")
+	usageReader := NewNormalizer(c.Log, c.Location)
 	for i, usage := range gcpMonthlyUsage.DailyUsage {
-		readerCleaner, err := csv.NewReaderCleaner(bytes.NewReader(usage.CSV), 15)
+		readerCleaner, err := csv.NewReaderCleaner(bytes.NewReader(usage), 15)
 		if err != nil {
 			return nil, err
 		}
@@ -83,14 +82,14 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 		err = csv.GenerateReports(readerCleaner, &dailyReport)
 		if err != nil {
 			// try again with 18 columns as it is sometimes
-			readerCleaner, err := csv.NewReaderCleaner(bytes.NewReader(usage.CSV), 18)
+			readerCleaner, err := csv.NewReaderCleaner(bytes.NewReader(usage), 18)
 			if err != nil {
 				return nil, err
 			}
 			dailyReport := []*Usage{}
 			err = csv.GenerateReports(readerCleaner, &dailyReport)
 			if err != nil {
-				c.log.Errorf("Failed to parse GCP usage for day: %d %s: %s", i+1, time.Now().In(c.location).Month().String(), err.Error())
+				c.Log.Errorf("Failed to parse GCP usage for day: %d %s: %s", i+1, time.Now().In(c.Location).Month().String(), err.Error())
 				continue
 			}
 		}
@@ -103,13 +102,13 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	return reports, nil
 }
 
-func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
+func (c Client) GetBillingData() (DetailedUsageReport, error) {
 	monthlyUsageReport := DetailedUsageReport{}
 
-	for i := 1; i < time.Now().In(c.location).Day(); i++ {
+	for i := 1; i < time.Now().In(c.Location).Day(); i++ {
 		dailyUsage, err := c.DailyUsageReport(i)
 		if err != nil {
-			c.log.Warnf("Failed to get GCP Daily Usage for %s, %d: %s", time.Now().In(c.location).Month().String(), i, err.Error())
+			c.Log.Warnf("Failed to get GCP Daily Usage for %s, %d: %s", time.Now().In(c.Location).Month().String(), i, err.Error())
 			continue
 		}
 		monthlyUsageReport.DailyUsage = append(monthlyUsageReport.DailyUsage, dailyUsage)
@@ -121,15 +120,14 @@ func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
 func (c Client) DailyUsageReport(day int) (DailyUsageReport, error) {
 	resp, err := c.StorageService.DailyUsage(c.BucketName, c.dailyBillingFileName(day))
 	if err != nil {
-		return DailyUsageReport{}, err
+		return nil, fmt.Errorf("Making request to GCP failed: ", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("GCP responded with error: %s", resp.Status)
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return DailyUsageReport{}, err
-	}
-	return DailyUsageReport{CSV: body}, nil
+	return ioutil.ReadAll(resp.Body)
 }
 
 func (c Client) PublishFileToBucket(name string) error {
@@ -140,22 +138,22 @@ func (c Client) PublishFileToBucket(name string) error {
 	file, err := os.Open(name)
 	defer file.Close()
 	if err != nil {
-		c.log.Errorf("Failed to open normalized file: %s", name)
+		c.Log.Errorf("Failed to open normalized file: %s", name)
 		return err
 	}
 
 	res, err := c.StorageService.Insert(c.BucketName, object, file)
 	if err != nil {
-		c.log.Errorf("Objects.Insert to bucket '%s' failed", c.BucketName)
+		c.Log.Errorf("Objects.Insert to bucket '%s' failed", c.BucketName)
 		return err
 	}
-	c.log.Infof("Created object %v at location %v", res.Name, res.SelfLink)
+	c.Log.Infof("Created object %v at location %v", res.Name, res.SelfLink)
 
 	return nil
 }
 
 func (c Client) dailyBillingFileName(day int) string {
-	year, month, _ := time.Now().In(c.location).Date()
+	year, month, _ := time.Now().In(c.Location).Date()
 	monthStr := padMonth(month)
 	dayStr := padDay(day)
 	return url.QueryEscape(strings.Join([]string{"Billing", strconv.Itoa(year), monthStr, dayStr}, "-") + ".csv")
