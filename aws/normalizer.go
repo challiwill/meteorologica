@@ -25,7 +25,7 @@ func NewNormalizer(log *logrus.Logger, location *time.Location, az string) *Norm
 func (ur *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 	var reports datamodels.Reports
 	for _, usage := range usageReports {
-		if usage.ProductCode == "" { // skip lines that total up accounts
+		if usage.ProductCode == "" { // skip lines that tally up accounts
 			continue
 		}
 		accountName := usage.LinkedAccountName
@@ -37,7 +37,7 @@ func (ur *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 			accountID = usage.PayerAccountId
 		}
 
-		ur.log.Debug("Using today's date as the date of retrieval for the AWS billing data")
+		ur.log.Debug("Using yesterday as usage date for AWS billing")
 		t := time.Now().In(ur.location)
 		reports = append(reports, datamodels.Report{
 			AccountNumber: accountID,

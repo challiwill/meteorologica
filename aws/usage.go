@@ -31,5 +31,4 @@ type Usage struct {
 	TaxType                string `csv:"TaxType"`
 	TotalCost              string `csv:"TotalCost"`
 	DailySpend             string `csv:"-"`
-	AvailabilityZone       string `csv:"-"`
 }

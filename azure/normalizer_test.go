@@ -170,5 +170,4 @@ var _ = Describe("Normalizer", func() {
 			})
 		})
 	})
-
 })

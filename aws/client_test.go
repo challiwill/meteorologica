@@ -1,17 +1,17 @@
 package aws_test
 
 import (
-	"github.com/challiwill/meteorologica/aws"
+	. "github.com/challiwill/meteorologica/aws"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Aws", func() {
-	var client *aws.Client
+var _ = Describe("Client", func() {
+	var client *Client
 
 	BeforeEach(func() {
-		client = new(aws.Client)
+		client = new(Client)
 	})
 
 	Describe("Name", func() {
