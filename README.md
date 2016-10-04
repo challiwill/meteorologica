@@ -133,3 +133,6 @@ cf push meteorologica -c "meteorologica -migrate"
 ```
 After this push the app again or restage as appropriate.
 Someday this will be made better.
+
+## Timeline
+I am keeping a running list of tasks to accomplish in the [TODO]() file.
