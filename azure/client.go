@@ -14,16 +14,6 @@ import (
 	"github.com/challiwill/meteorologica/datamodels"
 )
 
-type UsageReport struct {
-	Month      string `json:"Month"`
-	DetailLink string `json:"LinkToDownloadDetailReport"`
-}
-
-type UsageReports struct {
-	ContractVersion string        `json:"contract_version"`
-	Months          []UsageReport `json:"AvailableMonths"`
-}
-
 type Client struct {
 	URL        string
 	client     *http.Client
@@ -50,6 +40,9 @@ func (c Client) Name() string {
 
 func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	c.log.Info("Getting monthly Azure usage...")
+	c.log.Debug("Entering azure.GetNormalizedUsage")
+	defer c.log.Debug("Returning azure.GetNormalizedUsage")
+
 	azureMonthlyUsage, err := c.GetBillingData()
 	if err != nil {
 		return datamodels.Reports{}, err
@@ -70,6 +63,9 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 }
 
 func (c Client) GetBillingData() ([]byte, error) {
+	c.log.Debug("Entering azure.GetBillingData")
+	defer c.log.Debug("Returning azure.GetBillingData")
+
 	reqString := strings.Join([]string{c.URL, "rest", c.enrollment, "usage-report?type=detail"}, "/")
 	c.log.Debug("Making Azure billing request to address: ", reqString)
 

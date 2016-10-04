@@ -1,5 +1,4 @@
 CODE CLIMATE
-* add debug logs everywhere
 * backfill tests where necessary
   * AWS client
   * GCP client

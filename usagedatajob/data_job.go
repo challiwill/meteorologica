@@ -62,6 +62,9 @@ func NewJob(
 }
 
 func (j *UsageDataJob) Run() {
+	j.log.Debug("Entering usagedatajob.Run")
+	defer j.log.Debug("Returning usagedatajob.Run")
+
 	runTime := time.Now().In(j.location)
 	j.log.Infof("Running periodic job at %s ...", runTime.String())
 

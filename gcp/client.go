@@ -60,6 +60,9 @@ func (c Client) Name() string {
 
 func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	c.Log.Info("Getting monthly GCP usage...")
+	c.Log.Debug("Entering gcp.GetNormalizedUsage")
+	defer c.Log.Debug("Returning gcp.GetNormalizedUsage")
+
 	gcpMonthlyUsage, err := c.GetBillingData()
 	if err != nil {
 		c.Log.Error("Failed to get GCP monthly usage")
@@ -95,8 +98,10 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 }
 
 func (c Client) GetBillingData() (DetailedUsageReport, error) {
-	monthlyUsageReport := DetailedUsageReport{}
+	c.Log.Debug("Entering gcp.GetBillingData")
+	defer c.Log.Debug("Returning gcp.GetBillingData")
 
+	monthlyUsageReport := DetailedUsageReport{}
 	for i := 1; i < time.Now().In(c.Location).Day(); i++ {
 		dailyUsage, err := c.DailyUsageReport(i)
 		if err != nil {
@@ -109,6 +114,9 @@ func (c Client) GetBillingData() (DetailedUsageReport, error) {
 }
 
 func (c Client) DailyUsageReport(day int) ([]byte, error) {
+	c.Log.Debug("Entering gcp.DailyUsageReport")
+	defer c.Log.Debug("Returning gcp.DailyUsageReport")
+
 	resp, err := c.StorageService.DailyUsage(c.BucketName, c.dailyBillingFileName(day))
 	if err != nil {
 		return nil, fmt.Errorf("Making request to GCP failed: ", err)
@@ -122,6 +130,9 @@ func (c Client) DailyUsageReport(day int) ([]byte, error) {
 }
 
 func (c Client) PublishFileToBucket(name string) error {
+	c.Log.Debug("Entering gcp.PublishFileToBucket")
+	defer c.Log.Debug("Returning gcp.PublishFileToBucket")
+
 	object := &storage.Object{
 		Name:        name,
 		ContentType: "text/csv",

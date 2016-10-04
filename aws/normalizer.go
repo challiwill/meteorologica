@@ -22,7 +22,10 @@ func NewNormalizer(log *logrus.Logger, location *time.Location, az string) *Norm
 	}
 }
 
-func (ur *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
+func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
+	n.log.Debug("Entering aws.Normalize")
+	defer n.log.Debug("Returnign aws.Normalize")
+
 	var reports datamodels.Reports
 	for _, usage := range usageReports {
 		if usage.ProductCode == "" { // skip lines that tally up accounts
@@ -37,8 +40,7 @@ func (ur *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 			accountID = usage.PayerAccountId
 		}
 
-		ur.log.Debug("Using yesterday as usage date for AWS billing")
-		t := time.Now().In(ur.location)
+		t := time.Now().In(n.location)
 		reports = append(reports, datamodels.Report{
 			AccountNumber: accountID,
 			AccountName:   accountName,
@@ -48,7 +50,7 @@ func (ur *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 			ServiceType:   usage.ProductName,
 			UsageQuantity: usage.UsageQuantity,
 			Cost:          usage.TotalCost,
-			Region:        ur.az,
+			Region:        n.az,
 			UnitOfMeasure: "",
 			IAAS:          "AWS",
 		})

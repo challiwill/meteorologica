@@ -50,6 +50,9 @@ func (e MultiErr) Error() string {
 }
 
 func (c *Client) SaveReports(reports datamodels.Reports) error {
+	c.Log.Debug("Entering db.SaveReports")
+	defer c.Log.Debug("Returning db.SaveReports")
+
 	if len(reports) == 0 {
 		return errors.New("No reports to save")
 	}
@@ -74,14 +77,23 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 }
 
 func (c *Client) Close() error {
+	c.Log.Debug("Entering db.Close")
+	defer c.Log.Debug("Returning db.Close")
+
 	return c.Conn.Close()
 }
 
 func (c *Client) Ping() error {
+	c.Log.Debug("Entering db.Ping")
+	defer c.Log.Debug("Returning db.Ping")
+
 	return c.Conn.Ping()
 }
 
 func (c *Client) Migrate() error {
+	c.Log.Debug("Entering db.Migrate")
+	defer c.Log.Debug("Returning db.Migrate")
+
 	migration, err := ioutil.ReadFile("migrations/iaas_billing.sql")
 	if err != nil {
 		return err

@@ -43,9 +43,12 @@ func (c Client) Name() string {
 
 func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	c.log.Info("Getting Monthly AWS Usage...")
+	c.log.Debug("Entering aws.GetNormalizedUsage")
+	defer c.log.Debug("Returning aws.GetNormalizedUsage")
+
 	awsMonthlyUsage, err := c.GetBillingData()
 	if err != nil {
-		return datamodels.Reports{}, err
+		return datamodels.Reports{}, fmt.Errorf("Failed to get monthly AWS billing data: %s", err.Error())
 	}
 	c.log.Debug("Got Monthly AWS usage")
 
@@ -63,6 +66,9 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 }
 
 func (c Client) GetBillingData() ([]byte, error) {
+	c.log.Debug("Entering aws.GetBillingData")
+	defer c.log.Debug("Returning aws.GetBillingData")
+
 	objectInput := &s3.GetObjectInput{
 		Bucket: aws.String(c.Bucket),
 		Key:    aws.String(c.monthlyBillingFileName()),

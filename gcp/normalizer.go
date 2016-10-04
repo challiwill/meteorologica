@@ -20,13 +20,16 @@ func NewNormalizer(log *logrus.Logger, location *time.Location) *Normalizer {
 	}
 }
 
-func (ur *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
+func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
+	n.log.Debug("Entering gcp.Normalize")
+	defer n.log.Debug("Returning gcp.Normalize")
+
 	var reports datamodels.Reports
 	for _, usage := range usageReports {
 		t, err := time.Parse("2006-01-02T15:04:05-07:00", usage.StartTime)
 		if err != nil {
-			ur.log.Warnf("Could not parse time '%s', defaulting to today '%s'\n", usage.StartTime, time.Now().In(ur.location).String())
-			t = time.Now().In(ur.location)
+			n.log.Warnf("Could not parse time '%s', defaulting to today '%s'\n", usage.StartTime, time.Now().In(n.location).String())
+			t = time.Now().In(n.location)
 		}
 		reports = append(reports, datamodels.Report{
 			AccountNumber: usage.ProjectNumber,
