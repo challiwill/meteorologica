@@ -14,14 +14,20 @@ var _ = Describe("Aws", func() {
 		client = new(aws.Client)
 	})
 
-	XDescribe("MonthlyUsageReport", func() {
+	Describe("Name", func() {
+		It("returns the IAAS name", func() {
+			Expect(client.Name()).To(Equal("AWS"))
+		})
+	})
+
+	XDescribe("GetBillingData", func() {
 		var (
-			usage aws.DetailedUsageReport
+			usage []byte
 			err   error
 		)
 
 		JustBeforeEach(func() {
-			usage, err = client.MonthlyUsageReport()
+			usage, err = client.GetBillingData()
 		})
 
 		Context("When AWS returns a billing file", func() {

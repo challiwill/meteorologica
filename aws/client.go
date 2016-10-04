@@ -1,6 +1,8 @@
 package aws
 
 import (
+	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"strconv"
@@ -11,12 +13,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/challiwill/meteorologica/csv"
 	"github.com/challiwill/meteorologica/datamodels"
 )
-
-type DetailedUsageReport struct {
-	CSV []byte
-}
 
 type Client struct {
 	Bucket        string
@@ -44,47 +43,37 @@ func (c Client) Name() string {
 
 func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	c.log.Info("Getting Monthly AWS Usage...")
-	awsMonthlyUsage, err := c.MonthlyUsageReport()
+	awsMonthlyUsage, err := c.GetBillingData()
 	if err != nil {
-		c.log.Error("Failed to get AWS monthly usage: ", err)
 		return datamodels.Reports{}, err
 	}
 	c.log.Debug("Got Monthly AWS usage")
 
-	usageReader := NewUsageReader(c.log, c.location, c.Region)
-
-	reports, err := usageReader.GenerateReports(awsMonthlyUsage.CSV)
+	readerCleaner, err := csv.NewReaderCleaner(bytes.NewReader(awsMonthlyUsage), 29)
 	if err != nil {
-		c.log.Error("Failed to parse AWS usage")
-		return datamodels.Reports{}, err
+		return nil, fmt.Errorf("Failed to Read or Clean AWS reports: %s", err.Error())
+	}
+	reports := []*Usage{}
+	err = csv.GenerateReports(readerCleaner, &reports)
+	if err != nil {
+		return datamodels.Reports{}, fmt.Errorf("Failed to Generate Reports for AWS: %s", err.Error())
 	}
 
-	return usageReader.Normalize(reports), nil
+	return NewNormalizer(c.log, c.location, c.Region).Normalize(reports), nil
 }
 
-func (c Client) MonthlyUsageReport() (DetailedUsageReport, error) {
+func (c Client) GetBillingData() ([]byte, error) {
 	objectInput := &s3.GetObjectInput{
 		Bucket: aws.String(c.Bucket),
 		Key:    aws.String(c.monthlyBillingFileName()),
 	}
 	resp, err := c.s3.GetObject(objectInput)
 	if err != nil {
-		return DetailedUsageReport{}, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return DetailedUsageReport{}, err
-	}
-
-	csvLines := strings.SplitN(string(body), "\n", -1)
-	for csvLines[len(csvLines)-1] == "" { // remove empty lines
-		csvLines = csvLines[:len(csvLines)-1]
-	}
-	csvLines = csvLines[:len(csvLines)-1] // the last filled in line is a warning
-	csvStr := strings.Join(csvLines, "\n")
-	return DetailedUsageReport{CSV: []byte(csvStr)}, nil
+	return ioutil.ReadAll(resp.Body)
 }
 
 func (c Client) monthlyBillingFileName() string {

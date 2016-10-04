@@ -56,15 +56,16 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	}
 	c.log.Debug("Got monthly Azure usage")
 
-	usageReader, err := csv.NewReaderCleaner(bytes.NewReader(azureMonthlyUsage), 31)
+	readerCleaner, err := csv.NewReaderCleaner(bytes.NewReader(azureMonthlyUsage), 31)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to Read or Clean Azure reports: %s", err.Error())
 	}
 	reports := []*Usage{}
-	err = csv.GenerateReports(usageReader, &reports)
+	err = csv.GenerateReports(readerCleaner, &reports)
 	if err != nil {
 		return datamodels.Reports{}, fmt.Errorf("Failed to Generate Reports for Azure: %s", err.Error())
 	}
+
 	return NewNormalizer(c.log, c.location).Normalize(reports), nil
 }
 
