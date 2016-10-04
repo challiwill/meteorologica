@@ -1,14 +1,9 @@
 CODE CLIMATE
 * add debug logs everywhere
-* extract each IAAS as a resource or something so that new resources can be added to calculate billing info from (eg Pagerduty)
-* backfill tests where necessary
+* backfill tests where necessary (AWS client, GCP client, DB)
 * make normalizer generic
 * make better standaradized error types
 * test time better (eg in gcp client file name generation)
-
-PATTERNS/CONSISTENCY
-* use csv ReaderCleaner for AWS
-* use csv ReaderCleaner for GCP
 
 DATABASE
 * set up proper db migration framework
@@ -25,3 +20,4 @@ CONFIGURATION
 FEATURES
 * calculate and store `Monthly Spend` for all IAAS
 * add configurable frontend
+* extract each IAAS as a resource or something so that new resources can be added to calculate billing info from (eg Pagerduty)
