@@ -24,5 +24,6 @@ CONFIGURATION
 
 FEATURES
 * calculate and store `Monthly Spend` for all IAAS
+* calculate and store `Daily Spend` for all IAAS
 * add configurable frontend
 * extract each IAAS as a resource or something so that new resources can be added to calculate billing info from (eg Pagerduty)
