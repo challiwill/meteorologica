@@ -43,7 +43,7 @@ var _ = Describe("Gcp", func() {
 		})
 	})
 
-	Describe("GetBillingData", func() {
+	XDescribe("GetBillingData", func() {
 		var (
 			usageReport DetailedUsageReport
 			err         error
@@ -53,7 +53,7 @@ var _ = Describe("Gcp", func() {
 			usageReport, err = client.GetBillingData()
 		})
 
-		XContext("when gcp returns the bucket", func() {
+		Context("when gcp returns the bucket", func() {
 			BeforeEach(func() {
 			})
 
@@ -69,7 +69,7 @@ var _ = Describe("Gcp", func() {
 
 	Describe("DailyUsageReport", func() {
 		var (
-			report DailyUsageReport
+			report []byte
 			err    error
 			day    int
 		)
@@ -118,6 +118,23 @@ but really, we, know, you, want, CSV
 			It("returns the file", func() {
 				Expect(report).NotTo(BeEmpty())
 				Expect(string(report)).To(Equal(dailyUsageResponse))
+			})
+
+			Context("when the day is a single digit", func() {
+				BeforeEach(func() {
+					day = 2
+				})
+
+				It("requests the given bucketname and appropriate file name", func() {
+					bucketName, fileName := service.DailyUsageArgsForCall(0)
+					Expect(bucketName).To(Equal("my-bucket"))
+					expectedFileName := fmt.Sprintf("Billing-%d-%d-02.csv", time.Now().Year(), time.Now().Month())
+					if time.Now().Month() < 10 {
+						expectedFileName = fmt.Sprintf("Billing-%d-0%d-02.csv", time.Now().Year(), time.Now().Month())
+					}
+					Expect(fileName).To(Equal(expectedFileName))
+				})
+
 			})
 		})
 

@@ -28,11 +28,7 @@ type StorageService interface {
 	Insert(string, *storage.Object, *os.File) (*storage.Object, error)
 }
 
-type DetailedUsageReport struct {
-	DailyUsage []DailyUsageReport
-}
-
-type DailyUsageReport []byte
+type DetailedUsageReport [][]byte
 
 type Client struct {
 	StorageService StorageService
@@ -69,37 +65,33 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 		c.Log.Error("Failed to get GCP monthly usage")
 		return datamodels.Reports{}, err
 	}
-
-	reports := datamodels.Reports{}
 	c.Log.Debug("Got monthly GCP usage")
-	usageReader := NewNormalizer(c.Log, c.Location)
-	for i, usage := range gcpMonthlyUsage.DailyUsage {
-		readerCleaner, err := csv.NewReaderCleaner(bytes.NewReader(usage), 15)
-		if err != nil {
-			return nil, err
+
+	monthlyReport := []*Usage{}
+	for i, usage := range gcpMonthlyUsage {
+		var readerCleaner *csv.ReaderCleaner
+		if i == 0 {
+			readerCleaner, err = csv.NewReaderCleaner(bytes.NewReader(usage), 18) // only 18 on the first of the month
+		} else {
+			readerCleaner, err = csv.NewReaderCleaner(bytes.NewReader(usage), 14)
 		}
+		if err != nil {
+			return datamodels.Reports{}, err
+		}
+
 		dailyReport := []*Usage{}
 		err = csv.GenerateReports(readerCleaner, &dailyReport)
 		if err != nil {
-			// try again with 18 columns as it is sometimes
-			readerCleaner, err := csv.NewReaderCleaner(bytes.NewReader(usage), 18)
-			if err != nil {
-				return nil, err
-			}
-			dailyReport := []*Usage{}
-			err = csv.GenerateReports(readerCleaner, &dailyReport)
-			if err != nil {
-				c.Log.Errorf("Failed to parse GCP usage for day: %d %s: %s", i+1, time.Now().In(c.Location).Month().String(), err.Error())
-				continue
-			}
+			c.Log.Errorf("Failed to parse GCP usage for day: %d %s: %s", i+1, time.Now().In(c.Location).Month().String(), err.Error())
+			continue
 		}
-		reports = append(reports, usageReader.Normalize(dailyReport)...)
+		monthlyReport = append(monthlyReport, dailyReport...)
 	}
-
-	if len(reports) == 0 {
+	if len(monthlyReport) == 0 {
 		return datamodels.Reports{}, errors.New("Failed to parse all GCP usage data")
 	}
-	return reports, nil
+
+	return NewNormalizer(c.Log, c.Location).Normalize(monthlyReport), nil
 }
 
 func (c Client) GetBillingData() (DetailedUsageReport, error) {
@@ -111,13 +103,12 @@ func (c Client) GetBillingData() (DetailedUsageReport, error) {
 			c.Log.Warnf("Failed to get GCP Daily Usage for %s, %d: %s", time.Now().In(c.Location).Month().String(), i, err.Error())
 			continue
 		}
-		monthlyUsageReport.DailyUsage = append(monthlyUsageReport.DailyUsage, dailyUsage)
+		monthlyUsageReport = append(monthlyUsageReport, dailyUsage)
 	}
 	return monthlyUsageReport, nil
-
 }
 
-func (c Client) DailyUsageReport(day int) (DailyUsageReport, error) {
+func (c Client) DailyUsageReport(day int) ([]byte, error) {
 	resp, err := c.StorageService.DailyUsage(c.BucketName, c.dailyBillingFileName(day))
 	if err != nil {
 		return nil, fmt.Errorf("Making request to GCP failed: ", err)
