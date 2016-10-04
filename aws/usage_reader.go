@@ -85,7 +85,7 @@ func (ur *UsageReader) Normalize(usageReports []*Usage) datamodels.Reports {
 			accountID = usage.PayerAccountId
 		}
 
-		ur.log.Info("Using today's date as the date of retrieval for the AWS billing data")
+		ur.log.Debug("Using today's date as the date of retrieval for the AWS billing data")
 		t := time.Now().In(ur.location)
 		reports = append(reports, datamodels.Report{
 			AccountNumber: accountID,
