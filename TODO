@@ -4,7 +4,7 @@ CODE CLIMATE
 * backfill tests where necessary
 * make normalizer generic
 * make better standaradized error types
-* test time.Location better (for example when extracting file name in gcp client)
+* test time better (eg in gcp client file name generation)
 
 PATTERNS/CONSISTENCY
 * use csv ReaderCleaner for AWS
@@ -20,6 +20,7 @@ CONFIGURATION
 * create library (or find library) to load settings cleanly
 * set log level @ env var level also
 * allow storage bucket to be different if desired (or remove storage bucket entirely)
+* 'last job ran' should be stored in DB
 
 FEATURES
 * calculate and store `Monthly Spend` for all IAAS
