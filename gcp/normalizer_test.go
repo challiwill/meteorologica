@@ -8,5 +8,6 @@ import (
 )
 
 var _ = Describe("Normalizer", func() {
+	XIt("works", func() {})
 
 })

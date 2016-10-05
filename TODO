@@ -1,10 +1,5 @@
 CODE CLIMATE
-* backfill tests where necessary
-  * AWS client
-  * GCP client
-  * GCP normalizer
-  * usage data job
-  * DB
+* backfill tests where necessary (pending tests)
 * make normalizer generic
 * make better standaradized error types
 * test time better (eg in gcp client file name generation)
