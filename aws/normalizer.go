@@ -28,7 +28,7 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 
 	var reports datamodels.Reports
 	for _, usage := range usageReports {
-		if usage.ProductCode == "" { // skip lines that tally up accounts
+		if isNotLineItem(usage) { // skip lines that tally up accounts
 			continue
 		}
 		accountName := usage.LinkedAccountName
@@ -56,4 +56,8 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 		})
 	}
 	return reports
+}
+
+func isNotLineItem(usage *Usage) bool {
+	return usage.RecordType != "PayerLineItem" && usage.RecordType != "LinkedLineItem"
 }

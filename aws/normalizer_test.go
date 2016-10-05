@@ -39,7 +39,7 @@ var _ = Describe("Normalizer", func() {
 					InvoiceID:              "some-invoice-id",
 					PayerAccountId:         "some-payer-account-id",
 					LinkedAccountId:        "some-linked-account-id",
-					RecordType:             "some-record-type",
+					RecordType:             "LinkedLineItem",
 					RecordID:               "some-record-id",
 					BillingPeriodStartDate: "some-start-date",
 					BillingPeriodEndDate:   "some-end-date",
@@ -71,7 +71,7 @@ var _ = Describe("Normalizer", func() {
 					InvoiceID:              "some-invoice-id",
 					PayerAccountId:         "some-payer-account-id",
 					LinkedAccountId:        "",
-					RecordType:             "some-other-record-type",
+					RecordType:             "PayerLineItem",
 					RecordID:               "some-other-record-id",
 					BillingPeriodStartDate: "some-start-date",
 					BillingPeriodEndDate:   "some-end-date",
@@ -140,6 +140,10 @@ var _ = Describe("Normalizer", func() {
 						IAAS:          "AWS",
 					}))
 				})
+			})
+
+			Context("with rows that are tallys", func() {
+				XIt("works", func() {})
 			})
 		})
 
