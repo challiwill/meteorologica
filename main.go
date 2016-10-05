@@ -11,6 +11,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	awssdk "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/challiwill/meteorologica/aws"
 	"github.com/challiwill/meteorologica/azure"
 	"github.com/challiwill/meteorologica/db"
@@ -158,7 +159,7 @@ func main() {
 		if err != nil {
 			log.Fatal("Failed to create AWS credentials: ", err.Error())
 		}
-		awsClient := aws.NewClient(log, sfTime, az, bucketName, accountNumber, sess)
+		awsClient := aws.NewClient(log, sfTime, az, bucketName, accountNumber, s3.New(sess))
 		iaasClients = append(iaasClients, awsClient)
 	}
 

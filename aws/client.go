@@ -11,27 +11,32 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/client"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/challiwill/meteorologica/csv"
 	"github.com/challiwill/meteorologica/datamodels"
 )
 
+//go:generate counterfeiter . S3Client
+
+type S3Client interface {
+	GetObject(*s3.GetObjectInput) (*s3.GetObjectOutput, error)
+}
+
 type Client struct {
 	Bucket        string
 	AccountNumber string
 	Region        string
-	s3            *s3.S3
+	s3            S3Client
 	log           *logrus.Logger
 	location      *time.Location
 }
 
-func NewClient(log *logrus.Logger, location *time.Location, az, bucketName, accountNumber string, config client.ConfigProvider) *Client {
+func NewClient(log *logrus.Logger, location *time.Location, az, bucketName, accountNumber string, s3Client S3Client) *Client {
 	return &Client{
 		Bucket:        bucketName,
 		AccountNumber: accountNumber,
 		Region:        az,
-		s3:            s3.New(config),
+		s3:            s3Client,
 		log:           log,
 		location:      location,
 	}

@@ -90,6 +90,7 @@ but really, we, know, you, want, CSV
 			})
 
 			It("requests the given bucketname and appropriate file name", func() {
+				Expect(service.DailyUsageCallCount()).To(Equal(1))
 				bucketName, fileName := service.DailyUsageArgsForCall(0)
 				Expect(bucketName).To(Equal("my-bucket"))
 				expectedFileName := fmt.Sprintf("Billing-%d-%d-12.csv", time.Now().Year(), time.Now().Month())
