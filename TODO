@@ -6,8 +6,8 @@ CODE CLIMATE
 
 DATABASE
 * set up proper db migration framework
-* use proper data types in database
 * set up local db for testing
+* find better way to make unique key - currently there could be rows that appear to be duplicates but aren't
 
 CONFIGURATION
 * properly get DB credentials from env
