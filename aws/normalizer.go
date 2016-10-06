@@ -28,7 +28,7 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 
 	var reports datamodels.Reports
 	for _, usage := range usageReports {
-		if isNotLineItem(usage) { // skip lines that tally up accounts
+		if isNotLineItem(usage) {
 			continue
 		}
 		accountName := usage.LinkedAccountName
