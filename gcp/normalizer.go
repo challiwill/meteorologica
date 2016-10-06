@@ -31,15 +31,27 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 			n.log.Warnf("Could not parse time '%s', defaulting to today '%s'\n", usage.StartTime, time.Now().In(n.location).String())
 			t = time.Now().In(n.location)
 		}
+
+		quantity, err := strconv.ParseFloat(usage.Measurement1TotalConsumption, 64)
+		if err != nil {
+			n.log.Warn("measurement 1 total consumption '%s' is invalid, using 0", usage.Measurement1TotalConsumption)
+			quantity = 0
+		}
+		cost, err := strconv.ParseFloat(usage.Cost, 64)
+		if err != nil {
+			n.log.Warn("cost '%s' is invalid, using 0", usage.Cost)
+			cost = 0
+		}
+
 		reports = append(reports, datamodels.Report{
 			AccountNumber: usage.ProjectNumber,
 			AccountName:   usage.ProjectID,
-			Day:           strconv.Itoa(t.Day()),
+			Day:           t.Day(),
 			Month:         t.Month().String(),
-			Year:          strconv.Itoa(t.Year()),
+			Year:          t.Year(),
 			ServiceType:   usage.Description,
-			UsageQuantity: usage.Measurement1TotalConsumption,
-			Cost:          usage.Cost,
+			UsageQuantity: quantity,
+			Cost:          cost,
 			Region:        "",
 			UnitOfMeasure: usage.Measurement1Units,
 			IAAS:          "GCP",

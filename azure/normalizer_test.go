@@ -117,12 +117,12 @@ var _ = Describe("Normalizer", func() {
 					Expect(reports[0]).To(Equal(datamodels.Report{
 						AccountNumber: "some-guid",
 						AccountName:   "some-name",
-						Day:           "1",
+						Day:           1,
 						Month:         "October",
-						Year:          "2016",
+						Year:          2016,
 						ServiceType:   "some-service-type",
-						UsageQuantity: "24.00",
-						Cost:          "0.02",
+						UsageQuantity: 24.00,
+						Cost:          0.02,
 						Region:        "some-region",
 						UnitOfMeasure: "Hours",
 						IAAS:          "Azure",
@@ -130,12 +130,12 @@ var _ = Describe("Normalizer", func() {
 					Expect(reports[1]).To(Equal(datamodels.Report{
 						AccountNumber: "some-other-guid",
 						AccountName:   "some-other-name",
-						Day:           "1",
+						Day:           1,
 						Month:         "October",
-						Year:          "2016",
+						Year:          2016,
 						ServiceType:   "some-other-service-type",
-						UsageQuantity: "22.00",
-						Cost:          "4.02",
+						UsageQuantity: 22.00,
+						Cost:          4.02,
 						Region:        "some-other-region",
 						UnitOfMeasure: "Hours",
 						IAAS:          "Azure",
@@ -143,21 +143,135 @@ var _ = Describe("Normalizer", func() {
 				})
 			})
 
-			Context("with invalid month", func() {
+			Context("with invalid extended cost", func() {
 				BeforeEach(func() {
-					usageReports[0].Month = "13"
+					usageReports[0].ExtendedCost = "not-a-float"
 				})
 
 				It("returns the same number of reports", func() {
 					Expect(reports).To(HaveLen((len(usageReports))))
 				})
 
-				It("warns that month is invalid", func() {
-					Expect(log.Out).To(Say("month is invalid"))
+				It("warns that extended cost is invalid", func() {
+					Expect(log.Out).To(Say("extended cost 'not-a-float' is invalid"))
 				})
 
-				It("returns normalized Reports with month set to today", func() {
-					Expect(reports[0].Month).To(Equal(time.Now().Month().String()))
+				It("returns normalized Reports cost set to neutral value 0", func() {
+					Expect(reports[0].Cost).To(Equal(float64(0)))
+				})
+			})
+
+			Context("with invalid consumed quantity", func() {
+				BeforeEach(func() {
+					usageReports[0].ConsumedQuantity = "not-a-float"
+				})
+
+				It("returns the same number of reports", func() {
+					Expect(reports).To(HaveLen((len(usageReports))))
+				})
+
+				It("warns that consumed quantity is invalid", func() {
+					Expect(log.Out).To(Say("consumed quantity 'not-a-float' is invalid"))
+				})
+
+				It("returns normalized Reports usage quantity set to neutral value 0", func() {
+					Expect(reports[0].UsageQuantity).To(Equal(float64(0)))
+				})
+			})
+
+			Context("with invalid day", func() {
+				Context("when not an int", func() {
+					BeforeEach(func() {
+						usageReports[0].Day = "not-an-int"
+					})
+
+					It("returns the same number of reports", func() {
+						Expect(reports).To(HaveLen((len(usageReports))))
+					})
+
+					It("warns that day is invalid", func() {
+						Expect(log.Out).To(Say("day is invalid"))
+					})
+
+					It("returns normalized Reports with day set to today", func() {
+						Expect(reports[0].Day).To(Equal(time.Now().Day()))
+					})
+				})
+
+				Context("when invalid int", func() {
+					BeforeEach(func() {
+						usageReports[0].Day = "33"
+					})
+
+					It("returns the same number of reports", func() {
+						Expect(reports).To(HaveLen((len(usageReports))))
+					})
+
+					It("warns that day is invalid", func() {
+						Expect(log.Out).To(Say("day is invalid"))
+					})
+
+					It("returns normalized Reports with day set to today", func() {
+						Expect(reports[0].Day).To(Equal(time.Now().Day()))
+					})
+				})
+			})
+
+			Context("with invalid month", func() {
+				Context("when not an int", func() {
+					BeforeEach(func() {
+						usageReports[0].Month = "not-an-int"
+					})
+
+					It("returns the same number of reports", func() {
+						Expect(reports).To(HaveLen((len(usageReports))))
+					})
+
+					It("warns that month is invalid", func() {
+						Expect(log.Out).To(Say("month is invalid"))
+					})
+
+					It("returns normalized Reports with month set to today", func() {
+						Expect(reports[0].Month).To(Equal(time.Now().Month().String()))
+					})
+				})
+
+				Context("when invalid int", func() {
+					BeforeEach(func() {
+						usageReports[0].Month = "13"
+					})
+
+					It("returns the same number of reports", func() {
+						Expect(reports).To(HaveLen((len(usageReports))))
+					})
+
+					It("warns that month is invalid", func() {
+						Expect(log.Out).To(Say("month is invalid"))
+					})
+
+					It("returns normalized Reports with month set to today", func() {
+						Expect(reports[0].Month).To(Equal(time.Now().Month().String()))
+					})
+				})
+
+				Context("with invalid year", func() {
+					Context("when not an int", func() {
+						BeforeEach(func() {
+							usageReports[0].Year = "not-an-int"
+						})
+
+						It("returns the same number of reports", func() {
+							Expect(reports).To(HaveLen((len(usageReports))))
+						})
+
+						It("warns that year is invalid", func() {
+							Expect(log.Out).To(Say("year is invalid"))
+						})
+
+						It("returns normalized Reports with year set to today", func() {
+							Expect(reports[0].Year).To(Equal(time.Now().Year()))
+						})
+					})
 				})
 			})
 		})

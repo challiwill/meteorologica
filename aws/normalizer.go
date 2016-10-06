@@ -39,17 +39,26 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 		if accountID == "" {
 			accountID = usage.PayerAccountId
 		}
-
+		usageQuantity, err := strconv.ParseFloat(usage.UsageQuantity, 64)
+		if err != nil {
+			n.log.Warnf("Usage Quantity '%s' invalid, setting to 0", usage.UsageQuantity)
+			usageQuantity = 0
+		}
+		cost, err := strconv.ParseFloat(usage.TotalCost, 64)
+		if err != nil {
+			n.log.Warnf("Total Cost '%s' invalid, setting to 0", usage.TotalCost)
+			cost = 0
+		}
 		t := time.Now().In(n.location)
 		reports = append(reports, datamodels.Report{
 			AccountNumber: accountID,
 			AccountName:   accountName,
-			Day:           strconv.Itoa(t.Day() - 1),
+			Day:           t.Day() - 1,
 			Month:         t.Month().String(),
-			Year:          strconv.Itoa(t.Year()),
+			Year:          t.Year(),
 			ServiceType:   usage.ProductName,
-			UsageQuantity: usage.UsageQuantity,
-			Cost:          usage.TotalCost,
+			UsageQuantity: usageQuantity,
+			Cost:          cost,
 			Region:        n.az,
 			UnitOfMeasure: "",
 			IAAS:          "AWS",

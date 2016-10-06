@@ -49,12 +49,12 @@ var _ = Describe("Client", func() {
 					datamodels.Report{
 						AccountNumber: "12345",
 						AccountName:   "my-account",
-						Day:           "17",
+						Day:           17,
 						Month:         "March",
-						Year:          "1337",
+						Year:          1337,
 						ServiceType:   "some-service",
-						UsageQuantity: "0.65",
-						Cost:          "12.58",
+						UsageQuantity: 0.65,
+						Cost:          12.58,
 						Region:        "some-region",
 						UnitOfMeasure: "GB",
 						IAAS:          "MySpecialIAAS",
@@ -62,12 +62,12 @@ var _ = Describe("Client", func() {
 					datamodels.Report{
 						AccountNumber: "12345",
 						AccountName:   "my-account",
-						Day:           "13",
+						Day:           13,
 						Month:         "January",
-						Year:          "1905",
+						Year:          1905,
 						ServiceType:   "special-service",
-						UsageQuantity: "0.65",
-						Cost:          "12.58",
+						UsageQuantity: 0.65,
+						Cost:          12.58,
 						UnitOfMeasure: "GB",
 						IAAS:          "LessPreferredIAAS",
 					},
@@ -86,12 +86,12 @@ var _ = Describe("Client", func() {
 				Expect(query0).To(ContainSubstring("values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
 				Expect(args0[0]).To(Equal("12345"))
 				Expect(args0[1]).To(Equal("my-account"))
-				Expect(args0[2]).To(Equal("17"))
+				Expect(args0[2]).To(Equal(17))
 				Expect(args0[3]).To(Equal("March"))
-				Expect(args0[4]).To(Equal("1337"))
+				Expect(args0[4]).To(Equal(1337))
 				Expect(args0[5]).To(Equal("some-service"))
-				Expect(args0[6]).To(Equal("0.65"))
-				Expect(args0[7]).To(Equal("12.58"))
+				Expect(args0[6]).To(Equal(0.65))
+				Expect(args0[7]).To(Equal(12.58))
 				Expect(args0[8]).To(Equal("some-region"))
 				Expect(args0[9]).To(Equal("GB"))
 				Expect(args0[10]).To(Equal("MySpecialIAAS"))
@@ -101,12 +101,12 @@ var _ = Describe("Client", func() {
 				Expect(query1).To(ContainSubstring("values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
 				Expect(args1[0]).To(Equal("12345"))
 				Expect(args1[1]).To(Equal("my-account"))
-				Expect(args1[2]).To(Equal("13"))
+				Expect(args1[2]).To(Equal(13))
 				Expect(args1[3]).To(Equal("January"))
-				Expect(args1[4]).To(Equal("1905"))
+				Expect(args1[4]).To(Equal(1905))
 				Expect(args1[5]).To(Equal("special-service"))
-				Expect(args1[6]).To(Equal("0.65"))
-				Expect(args1[7]).To(Equal("12.58"))
+				Expect(args1[6]).To(Equal(0.65))
+				Expect(args1[7]).To(Equal(12.58))
 				Expect(args1[8]).To(Equal(""))
 				Expect(args1[9]).To(Equal("GB"))
 				Expect(args1[10]).To(Equal("LessPreferredIAAS"))
