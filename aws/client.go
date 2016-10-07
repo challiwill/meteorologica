@@ -2,6 +2,7 @@ package aws
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -16,10 +17,18 @@ import (
 	"github.com/challiwill/meteorologica/datamodels"
 )
 
+var IAAS = "AWS"
+
 //go:generate counterfeiter . S3Client
 
 type S3Client interface {
 	GetObject(*s3.GetObjectInput) (*s3.GetObjectOutput, error)
+}
+
+//go:generate counterfeiter . ReportsDatabase
+
+type ReportsDatabase interface {
+	GetUsageMonthToDate(datamodels.ReportIdentifier) (datamodels.UsageMonthToDate, error)
 }
 
 type Client struct {
@@ -29,9 +38,10 @@ type Client struct {
 	s3            S3Client
 	log           *logrus.Logger
 	location      *time.Location
+	db            ReportsDatabase
 }
 
-func NewClient(log *logrus.Logger, location *time.Location, az, bucketName, accountNumber string, s3Client S3Client) *Client {
+func NewClient(log *logrus.Logger, location *time.Location, az, bucketName, accountNumber string, s3Client S3Client, db ReportsDatabase) *Client {
 	return &Client{
 		Bucket:        bucketName,
 		AccountNumber: accountNumber,
@@ -39,11 +49,12 @@ func NewClient(log *logrus.Logger, location *time.Location, az, bucketName, acco
 		s3:            s3Client,
 		log:           log,
 		location:      location,
+		db:            db,
 	}
 }
 
 func (c Client) Name() string {
-	return "AWS"
+	return IAAS
 }
 
 func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
@@ -67,7 +78,11 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 		return datamodels.Reports{}, fmt.Errorf("Failed to Generate Reports for AWS: %s", err.Error())
 	}
 
-	reports = c.ConsolidateReports(reports) // add up similiar reports
+	reports = c.ConsolidateReports(reports)
+	reports, err = c.CalculateDailyUsages(reports)
+	if err != nil {
+		return datamodels.Reports{}, err
+	}
 
 	return NewNormalizer(c.log, c.location, c.Region).Normalize(reports), nil
 }
@@ -102,6 +117,7 @@ func (c Client) ConsolidateReports(reports []*Usage) []*Usage {
 }
 
 // find returns a found report if account number and service type match
+// TODO it should probably use datamodels.ReportIdentifier's
 
 func find(haystack []*Usage, needle *Usage) (int, bool) {
 	for i, h := range haystack {
@@ -121,6 +137,42 @@ func sumReports(one *Usage, two *Usage) *Usage {
 	one.UsageQuantity += two.UsageQuantity
 	one.TotalCost += two.TotalCost
 	return one
+}
+
+func (c Client) CalculateDailyUsages(reports []*Usage) ([]*Usage, error) {
+	// TODO this should become part of the normalizer in some ways (like a
+	// NormalizeReportIdentifier() function)
+	if c.db == nil {
+		return nil, errors.New("no database connected")
+	}
+	for i, report := range reports {
+		accountName := report.LinkedAccountName
+		if accountName == "" {
+			accountName = report.PayerAccountName
+		}
+		accountID := report.LinkedAccountId
+		if accountID == "" {
+			accountID = report.PayerAccountId
+		}
+
+		usageToDate, err := c.db.GetUsageMonthToDate(datamodels.ReportIdentifier{
+			AccountNumber: accountID,
+			AccountName:   accountName,
+			ServiceType:   report.ProductName,
+			Day:           time.Now().Day(),
+			Month:         time.Now().Month().String(),
+			Year:          time.Now().Year(),
+			IAAS:          IAAS,
+			Region:        c.Region,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		reports[i].DailyUsage = reports[i].UsageQuantity - usageToDate.UsageQuantity
+		reports[i].DailySpend = reports[i].TotalCost - usageToDate.Cost
+	}
+	return reports, nil
 }
 
 func (c Client) monthlyBillingFileName() string {

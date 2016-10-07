@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	. "github.com/challiwill/meteorologica/aws"
 	"github.com/challiwill/meteorologica/aws/awsfakes"
+	"github.com/challiwill/meteorologica/datamodels"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -21,16 +22,20 @@ import (
 
 var _ = Describe("Client", func() {
 	var (
-		client   *Client
-		log      *logrus.Logger
-		s3Client *awsfakes.FakeS3Client
+		client    *Client
+		log       *logrus.Logger
+		s3Client  *awsfakes.FakeS3Client
+		logOutput *Buffer
+		dbClient  *awsfakes.FakeReportsDatabase
 	)
 
 	BeforeEach(func() {
 		log = logrus.New()
-		log.Out = NewBuffer()
+		logOutput = NewBuffer()
+		log.Out = logOutput
 		s3Client = new(awsfakes.FakeS3Client)
-		client = NewClient(log, time.Now().Location(), "my-region", "my-bucket", "my-account-number", s3Client)
+		dbClient = new(awsfakes.FakeReportsDatabase)
+		client = NewClient(log, time.Now().Location(), "my-region", "my-bucket", "my-account-number", s3Client, dbClient)
 	})
 
 	Describe("Name", func() {
@@ -231,6 +236,166 @@ var _ = Describe("Client", func() {
 					}))
 			})
 		})
+	})
+
+	Describe("CalculateDailyUsages", func() {
+		var (
+			originalReports  []*Usage
+			populatedReports []*Usage
+			err              error
+		)
+
+		BeforeEach(func() {
+			originalReports = []*Usage{
+				&Usage{
+					PayerAccountName:  "some-account-name",
+					LinkedAccountName: "some-linked-account-name",
+					PayerAccountId:    "some-account-number",
+					LinkedAccountId:   "some-linked-account-number",
+					ProductName:       "some-service-type",
+					UsageQuantity:     10,
+					TotalCost:         100,
+				},
+				&Usage{
+					PayerAccountName:  "some-account-name",
+					LinkedAccountName: "",
+					PayerAccountId:    "some-account-number",
+					LinkedAccountId:   "",
+					ProductName:       "some-other-service-type",
+					UsageQuantity:     9,
+					TotalCost:         20,
+				},
+			}
+		})
+
+		JustBeforeEach(func() {
+			populatedReports, err = client.CalculateDailyUsages(originalReports)
+		})
+
+		Context("when there is no database", func() {
+			BeforeEach(func() {
+				dbClient = nil
+				client = NewClient(log, time.Now().Location(), "my-region", "my-bucket", "my-account-number", s3Client, nil)
+			})
+
+			It("errors", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("no database connected"))
+			})
+		})
+
+		Context("when a database is connected", func() {
+			It("fetches cost and usage month to date for each report", func() {
+				Expect(dbClient.GetUsageMonthToDateCallCount()).To(Equal(2))
+				Expect(dbClient.GetUsageMonthToDateArgsForCall(0)).To(Equal(datamodels.ReportIdentifier{
+					AccountNumber: "some-linked-account-number",
+					AccountName:   "some-linked-account-name",
+					ServiceType:   "some-service-type",
+					Day:           time.Now().Day(),
+					Month:         time.Now().Month().String(),
+					Year:          time.Now().Year(),
+					IAAS:          "AWS",
+					Region:        "my-region",
+				}))
+				Expect(dbClient.GetUsageMonthToDateArgsForCall(1)).To(Equal(datamodels.ReportIdentifier{
+					AccountNumber: "some-account-number",
+					AccountName:   "some-account-name",
+					ServiceType:   "some-other-service-type",
+					Day:           time.Now().Day(),
+					Month:         time.Now().Month().String(),
+					Year:          time.Now().Year(),
+					IAAS:          "AWS",
+					Region:        "my-region",
+				}))
+			})
+
+			Context("when the database returns found usage", func() {
+				var (
+					callCount      int
+					returnedUsages []datamodels.UsageMonthToDate
+				)
+
+				BeforeEach(func() {
+					originalReports = append(originalReports,
+						&Usage{
+							PayerAccountName:  "some-account-name",
+							LinkedAccountName: "some-linked-account-name",
+							PayerAccountId:    "some-account-number",
+							LinkedAccountId:   "some-linked-account-number",
+							ProductName:       "some-other-service-type",
+							UsageQuantity:     1,
+							TotalCost:         1,
+						},
+					)
+					returnedUsages = []datamodels.UsageMonthToDate{
+						datamodels.UsageMonthToDate{
+							AccountNumber: "some-linked-account-number",
+							AccountName:   "some-linked-account-name",
+							Month:         time.Now().Month().String(),
+							Year:          time.Now().Year(),
+							ServiceType:   "some-service-type",
+							UsageQuantity: 9,
+							Cost:          90,
+							Region:        "my-region",
+							UnitOfMeasure: "GB",
+							IAAS:          "AWS",
+						},
+						datamodels.UsageMonthToDate{
+							AccountNumber: "some-account-number",
+							AccountName:   "some-account-name",
+							Month:         time.Now().Month().String(),
+							Year:          time.Now().Year(),
+							ServiceType:   "some-other-service-type",
+							UsageQuantity: 7,
+							Cost:          19,
+							Region:        "my-region",
+							UnitOfMeasure: "GB",
+							IAAS:          "AWS",
+						},
+					}
+					dbClient.GetUsageMonthToDateStub = func(datamodels.ReportIdentifier) (datamodels.UsageMonthToDate, error) {
+						if callCount > 1 {
+							return datamodels.UsageMonthToDate{}, nil
+						}
+						retUsage := returnedUsages[callCount]
+						callCount++
+						return retUsage, nil
+					}
+				})
+
+				AfterEach(func() {
+					callCount = 0
+				})
+
+				It("returns the right number of reports", func() {
+					Expect(populatedReports).To(HaveLen(3))
+				})
+
+				It("calculates daily usages when previous use is found", func() {
+					Expect(populatedReports[0].DailyUsage).To(Equal(float64(1)))
+					Expect(populatedReports[0].DailySpend).To(Equal(float64(10)))
+					Expect(populatedReports[1].DailyUsage).To(Equal(float64(2)))
+					Expect(populatedReports[1].DailySpend).To(Equal(float64(1)))
+				})
+
+				It("sets daily amounts to total amounts when no previous usage found", func() {
+					Expect(populatedReports[2].DailySpend).To(Equal(originalReports[2].UsageQuantity))
+					Expect(populatedReports[2].DailyUsage).To(Equal(originalReports[2].TotalCost))
+				})
+			})
+
+			Context("when the database fails", func() {
+				BeforeEach(func() {
+					dbClient.GetUsageMonthToDateReturns(datamodels.UsageMonthToDate{}, errors.New("some-error"))
+				})
+
+				It("errors", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("some-error"))
+				})
+			})
+		})
+
 	})
 })
 

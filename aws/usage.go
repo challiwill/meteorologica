@@ -22,13 +22,14 @@ type Usage struct {
 	ItemDescription        string  `csv:"ItemDescription"`
 	UsageStartDate         string  `csv:"UsageStartDate"`
 	UsageEndDate           string  `csv:"UsageEndDate"`
-	UsageQuantity          float64 `csv:"UsageQuantity"` // should get float
+	UsageQuantity          float64 `csv:"UsageQuantity"`
 	BlendedRate            string  `csv:"BlendedRate"`
 	CurrencyCode           string  `csv:"CurrencyCode"`
 	CostBeforeTax          string  `csv:"CostBeforeTax"`
 	Credits                string  `csv:"Credits"`
 	TaxAmount              string  `csv:"TaxAmount"`
 	TaxType                string  `csv:"TaxType"`
-	TotalCost              float64 `csv:"TotalCost"` // should get float
-	DailySpend             float64 `csv:"-"`         // should get float
+	TotalCost              float64 `csv:"TotalCost"`
+	DailySpend             float64 `csv:"-"`
+	DailyUsage             float64 `csv:"-"`
 }

@@ -17,11 +17,11 @@ CONFIGURATION
 * 'last job ran' should be stored in DB
 
 FEATURES
-* calculate and store `Daily Spend` for all IAAS
 * extract each IAAS as a resource or something so that new resources can be added to calculate billing info from (eg Pagerduty)
 
 PERFORMANCE
 * can use streams of reading from csv and writing to database to do it all concurrently instead of in blocks
+* can use better types for slices of usages (eg in AWS) that have smarter methods for serching for duplicates
 
 OTHER SERVICES
 * configurable frontend as a micro service

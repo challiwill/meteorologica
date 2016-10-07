@@ -1,5 +1,29 @@
 package datamodels
 
+type ReportIdentifier struct {
+	AccountNumber string
+	AccountName   string
+	ServiceType   string
+	Day           int
+	Month         string
+	Year          int
+	IAAS          string
+	Region        string
+}
+
+type UsageMonthToDate struct {
+	AccountNumber string
+	AccountName   string
+	Month         string
+	Year          int
+	ServiceType   string
+	UsageQuantity float64
+	Cost          float64
+	Region        string
+	UnitOfMeasure string
+	IAAS          string
+}
+
 type Report struct {
 	AccountNumber string  `csv:"Account Number"`
 	AccountName   string  `csv:"Account Name"`

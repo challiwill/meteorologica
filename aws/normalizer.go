@@ -46,11 +46,11 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 			Month:         t.Month().String(),
 			Year:          t.Year(),
 			ServiceType:   usage.ProductName,
-			UsageQuantity: usage.UsageQuantity,
-			Cost:          usage.TotalCost,
+			UsageQuantity: usage.DailyUsage,
+			Cost:          usage.DailySpend,
 			Region:        n.az,
 			UnitOfMeasure: "",
-			IAAS:          "AWS",
+			IAAS:          IAAS,
 		})
 	}
 	return reports

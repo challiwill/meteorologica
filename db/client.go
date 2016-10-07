@@ -15,6 +15,7 @@ import (
 
 type DB interface {
 	Exec(string, ...interface{}) (sql.Result, error)
+	QueryRow(string, ...interface{}) *sql.Row
 	Close() error
 	Ping() error
 	Begin() (*sql.Tx, error)
@@ -74,6 +75,28 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 		return multiErr
 	}
 	return nil
+}
+
+func (c *Client) GetUsageMonthToDate(id datamodels.ReportIdentifier) (datamodels.UsageMonthToDate, error) {
+	c.Log.Debug("Entering db.GetUsageMonthToDate")
+	defer c.Log.Debug("Returning db.GetUsageMonthToDate")
+
+	usageToDate := datamodels.UsageMonthToDate{}
+	err := c.Conn.QueryRow(`
+		SELECT AccountNumber, AccountName, Month, Year, ServiceType, SUM(UsageQuantity), SUM(Cost), Region, UnitOfMeasure, IAAS
+		FROM iaas_billing
+		WHERE AccountName=?
+		AND Month=?
+		AND Year=?
+		AND ServiceType=?
+		AND Region=?
+		AND IAAS=?`,
+		id.AccountName, id.Month, id.Year, id.ServiceType, id.Region, id.IAAS).Scan(&usageToDate)
+	if err == sql.ErrNoRows {
+		err = nil
+	}
+
+	return usageToDate, err
 }
 
 func (c *Client) Close() error {

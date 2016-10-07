@@ -19,6 +19,15 @@ type FakeDB struct {
 		result1 sql.Result
 		result2 error
 	}
+	QueryRowStub        func(string, ...interface{}) *sql.Row
+	queryRowMutex       sync.RWMutex
+	queryRowArgsForCall []struct {
+		arg1 string
+		arg2 []interface{}
+	}
+	queryRowReturns struct {
+		result1 *sql.Row
+	}
 	CloseStub        func() error
 	closeMutex       sync.RWMutex
 	closeArgsForCall []struct{}
@@ -75,6 +84,40 @@ func (fake *FakeDB) ExecReturns(result1 sql.Result, result2 error) {
 		result1 sql.Result
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeDB) QueryRow(arg1 string, arg2 ...interface{}) *sql.Row {
+	fake.queryRowMutex.Lock()
+	fake.queryRowArgsForCall = append(fake.queryRowArgsForCall, struct {
+		arg1 string
+		arg2 []interface{}
+	}{arg1, arg2})
+	fake.recordInvocation("QueryRow", []interface{}{arg1, arg2})
+	fake.queryRowMutex.Unlock()
+	if fake.QueryRowStub != nil {
+		return fake.QueryRowStub(arg1, arg2...)
+	} else {
+		return fake.queryRowReturns.result1
+	}
+}
+
+func (fake *FakeDB) QueryRowCallCount() int {
+	fake.queryRowMutex.RLock()
+	defer fake.queryRowMutex.RUnlock()
+	return len(fake.queryRowArgsForCall)
+}
+
+func (fake *FakeDB) QueryRowArgsForCall(i int) (string, []interface{}) {
+	fake.queryRowMutex.RLock()
+	defer fake.queryRowMutex.RUnlock()
+	return fake.queryRowArgsForCall[i].arg1, fake.queryRowArgsForCall[i].arg2
+}
+
+func (fake *FakeDB) QueryRowReturns(result1 *sql.Row) {
+	fake.QueryRowStub = nil
+	fake.queryRowReturns = struct {
+		result1 *sql.Row
+	}{result1}
 }
 
 func (fake *FakeDB) Close() error {
@@ -158,6 +201,8 @@ func (fake *FakeDB) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.execMutex.RLock()
 	defer fake.execMutex.RUnlock()
+	fake.queryRowMutex.RLock()
+	defer fake.queryRowMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
 	fake.pingMutex.RLock()
