@@ -96,6 +96,142 @@ var _ = Describe("Client", func() {
 			})
 		})
 	})
+
+	Describe("ConsolidateReports", func() {
+		var (
+			reports      []*Usage
+			usageReports []*Usage
+		)
+
+		JustBeforeEach(func() {
+			usageReports = client.ConsolidateReports(reports)
+		})
+
+		Context("with valid reports", func() {
+			BeforeEach(func() {
+				reports = []*Usage{
+					&Usage{
+						InvoiceID:         "one-invoice",
+						PayerAccountId:    "some-account",
+						LinkedAccountId:   "some-other-account",
+						PayerAccountName:  "some-account-name",
+						LinkedAccountName: "some-other-account-name",
+						ProductCode:       "some-product",
+						ProductName:       "some-product-name",
+						UsageQuantity:     0.1,
+						TotalCost:         0.3,
+					},
+					&Usage{
+						InvoiceID:         "one-invoice",
+						PayerAccountId:    "some-account",
+						LinkedAccountId:   "",
+						PayerAccountName:  "some-account-name",
+						LinkedAccountName: "",
+						ProductCode:       "some-product",
+						ProductName:       "some-product-name",
+						UsageQuantity:     0.5,
+						TotalCost:         0.01,
+					},
+					&Usage{
+						InvoiceID:         "one-invoice",
+						PayerAccountId:    "some-account",
+						LinkedAccountId:   "",
+						PayerAccountName:  "some-account-name",
+						LinkedAccountName: "",
+						ProductCode:       "some-product",
+						ProductName:       "some-product-name",
+						UsageQuantity:     0.3,
+						TotalCost:         0.02,
+					},
+					&Usage{
+						InvoiceID:         "one-invoice",
+						PayerAccountId:    "some-account",
+						LinkedAccountId:   "some-real-account",
+						PayerAccountName:  "some-account-name",
+						LinkedAccountName: "some-real-account-name",
+						ProductCode:       "some-other-product",
+						ProductName:       "some-other-product-name",
+						UsageQuantity:     100,
+						TotalCost:         100,
+					},
+					&Usage{
+						InvoiceID:         "one-invoice",
+						PayerAccountId:    "some-account",
+						LinkedAccountId:   "some-other-account",
+						PayerAccountName:  "some-account-name",
+						LinkedAccountName: "some-other-account-name",
+						ProductCode:       "some-other-product",
+						ProductName:       "some-other-product-name",
+						UsageQuantity:     1000,
+						TotalCost:         1000,
+					},
+					&Usage{
+						InvoiceID:         "one-invoice",
+						PayerAccountId:    "some-account",
+						LinkedAccountId:   "some-other-account",
+						PayerAccountName:  "some-account-name",
+						LinkedAccountName: "some-other-account-name",
+						ProductCode:       "some-product",
+						ProductName:       "some-product-name",
+						UsageQuantity:     0.1,
+						TotalCost:         0.3,
+					},
+				}
+			})
+
+			It("returns one aggregate row for matching service type for same account", func() {
+				Expect(len(usageReports)).To(Equal(4))
+				Expect(usageReports).To(ContainElement(
+					&Usage{
+						InvoiceID:         "one-invoice",
+						PayerAccountId:    "some-account",
+						LinkedAccountId:   "some-other-account",
+						PayerAccountName:  "some-account-name",
+						LinkedAccountName: "some-other-account-name",
+						ProductCode:       "some-product",
+						ProductName:       "some-product-name",
+						UsageQuantity:     0.2,
+						TotalCost:         0.6,
+					}))
+				Expect(usageReports).To(ContainElement(
+					&Usage{
+						InvoiceID:         "one-invoice",
+						PayerAccountId:    "some-account",
+						LinkedAccountId:   "",
+						PayerAccountName:  "some-account-name",
+						LinkedAccountName: "",
+						ProductCode:       "some-product",
+						ProductName:       "some-product-name",
+						UsageQuantity:     0.8,
+						TotalCost:         0.03,
+					}))
+				Expect(usageReports).To(ContainElement(
+					&Usage{
+						InvoiceID:         "one-invoice",
+						PayerAccountId:    "some-account",
+						LinkedAccountId:   "some-real-account",
+						PayerAccountName:  "some-account-name",
+						LinkedAccountName: "some-real-account-name",
+						ProductCode:       "some-other-product",
+						ProductName:       "some-other-product-name",
+						UsageQuantity:     100,
+						TotalCost:         100,
+					}))
+				Expect(usageReports).To(ContainElement(
+					&Usage{
+						InvoiceID:         "one-invoice",
+						PayerAccountId:    "some-account",
+						LinkedAccountId:   "some-other-account",
+						PayerAccountName:  "some-account-name",
+						LinkedAccountName: "some-other-account-name",
+						ProductCode:       "some-other-product",
+						ProductName:       "some-other-product-name",
+						UsageQuantity:     1000,
+						TotalCost:         1000,
+					}))
+			})
+		})
+	})
 })
 
 var dailyUsageResponse = `

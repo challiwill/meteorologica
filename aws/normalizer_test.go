@@ -56,15 +56,15 @@ var _ = Describe("Normalizer", func() {
 					ItemDescription:        "some-item-description",
 					UsageStartDate:         "some-usage-start-date",
 					UsageEndDate:           "some-usage-end-date",
-					UsageQuantity:          "0.51",
+					UsageQuantity:          0.51,
 					BlendedRate:            "some-blended-rate",
 					CurrencyCode:           "some-currency-code",
 					CostBeforeTax:          "some-cost",
 					Credits:                "some-credits",
 					TaxAmount:              "some-tax-amount",
 					TaxType:                "some-tax-type",
-					TotalCost:              "1.20",
-					DailySpend:             "some-daily-spend",
+					TotalCost:              1.20,
+					DailySpend:             1.3,
 				},
 				&Usage{
 					InvoiceID:              "some-invoice-id",
@@ -88,15 +88,15 @@ var _ = Describe("Normalizer", func() {
 					ItemDescription:        "some-other-item-description",
 					UsageStartDate:         "some-other-usage-start-date",
 					UsageEndDate:           "some-other-usage-end-date",
-					UsageQuantity:          "0.12345",
+					UsageQuantity:          0.12345,
 					BlendedRate:            "some-other-blended-rate",
 					CurrencyCode:           "some-other-currency-code",
 					CostBeforeTax:          "some-other-cost",
 					Credits:                "some-other-credits",
 					TaxAmount:              "some-other-tax-amount",
 					TaxType:                "some-other-tax-type",
-					TotalCost:              "13.37",
-					DailySpend:             "some-other-daily-spend",
+					TotalCost:              13.37,
+					DailySpend:             1.3,
 				},
 			}
 		})
@@ -139,26 +139,6 @@ var _ = Describe("Normalizer", func() {
 						IAAS:          "AWS",
 					}))
 				})
-
-				Context("with invalid cost", func() {
-					BeforeEach(func() {
-						usageReports[0].TotalCost = "invalid-cost"
-					})
-
-					It("returns a neutral value of 0", func() {
-						Expect(reports[0].Cost).To(Equal(float64(0)))
-					})
-				})
-
-				Context("with invalid usage", func() {
-					BeforeEach(func() {
-						usageReports[0].UsageQuantity = "invalid-usage-quantity"
-					})
-
-					It("returns a neutral value of 0", func() {
-						Expect(reports[0].UsageQuantity).To(Equal(float64(0)))
-					})
-				})
 			})
 
 			Context("with rows that are not line items", func() {
@@ -186,15 +166,15 @@ var _ = Describe("Normalizer", func() {
 							ItemDescription:        "some-item-description",
 							UsageStartDate:         "some-usage-start-date",
 							UsageEndDate:           "some-usage-end-date",
-							UsageQuantity:          "0.51",
+							UsageQuantity:          0.51,
 							BlendedRate:            "some-blended-rate",
 							CurrencyCode:           "some-currency-code",
 							CostBeforeTax:          "some-cost",
 							Credits:                "some-credits",
 							TaxAmount:              "some-tax-amount",
 							TaxType:                "some-tax-type",
-							TotalCost:              "1.20",
-							DailySpend:             "some-daily-spend",
+							TotalCost:              1.20,
+							DailySpend:             1.4,
 						},
 					)
 				})

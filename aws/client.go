@@ -67,6 +67,8 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 		return datamodels.Reports{}, fmt.Errorf("Failed to Generate Reports for AWS: %s", err.Error())
 	}
 
+	reports = c.ConsolidateReports(reports) // add up similiar reports
+
 	return NewNormalizer(c.log, c.location, c.Region).Normalize(reports), nil
 }
 
@@ -85,6 +87,40 @@ func (c Client) GetBillingData() ([]byte, error) {
 	defer resp.Body.Close()
 
 	return ioutil.ReadAll(resp.Body)
+}
+
+func (c Client) ConsolidateReports(reports []*Usage) []*Usage {
+	consolidatedReports := []*Usage{}
+	for _, r := range reports {
+		if i, found := find(consolidatedReports, r); found {
+			consolidatedReports[i] = sumReports(consolidatedReports[i], r)
+			continue
+		}
+		consolidatedReports = append(consolidatedReports, r)
+	}
+	return consolidatedReports
+}
+
+// find returns a found report if account number and service type match
+
+func find(haystack []*Usage, needle *Usage) (int, bool) {
+	for i, h := range haystack {
+		if h.PayerAccountName == needle.PayerAccountName &&
+			h.LinkedAccountName == needle.LinkedAccountName &&
+			h.ProductName == needle.ProductName {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
+// sumReports only adds the additive fields that we currenlty care about. This
+// might change in the future if we start storing more fields in the database
+
+func sumReports(one *Usage, two *Usage) *Usage {
+	one.UsageQuantity += two.UsageQuantity
+	one.TotalCost += two.TotalCost
+	return one
 }
 
 func (c Client) monthlyBillingFileName() string {
