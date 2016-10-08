@@ -2,8 +2,6 @@ package gcp
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -15,6 +13,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/challiwill/meteorologica/csv"
 	"github.com/challiwill/meteorologica/datamodels"
+	"github.com/challiwill/meteorologica/errare"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -91,7 +90,7 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 		monthlyReport = append(monthlyReport, dailyReport...)
 	}
 	if len(monthlyReport) == 0 {
-		return datamodels.Reports{}, errors.New("Failed to parse all GCP usage data")
+		return datamodels.Reports{}, csv.NewEmptyReportError("parsing GCP usage")
 	}
 
 	return NewNormalizer(c.Log, c.Location).Normalize(monthlyReport), nil
@@ -119,10 +118,10 @@ func (c Client) DailyUsageReport(day int) ([]byte, error) {
 
 	resp, err := c.StorageService.DailyUsage(c.BucketName, c.dailyBillingFileName(day))
 	if err != nil {
-		return nil, fmt.Errorf("Making request to GCP failed: ", err)
+		return nil, errare.NewRequestError(err, "GCP")
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GCP responded with error: %s", resp.Status)
+		return nil, errare.NewResponseError(resp.Status, "GCP")
 	}
 	defer resp.Body.Close()
 

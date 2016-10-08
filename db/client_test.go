@@ -118,8 +118,8 @@ var _ = Describe("Client", func() {
 				reports = datamodels.Reports{}
 			})
 
-			It("errors", func() {
-				Expect(err).To(HaveOccurred())
+			It("does not error", func() {
+				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 	})

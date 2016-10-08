@@ -1,7 +1,6 @@
 package azure
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/challiwill/meteorologica/csv"
 	"github.com/challiwill/meteorologica/datamodels"
+	"github.com/challiwill/meteorologica/errare"
 )
 
 type Client struct {
@@ -45,18 +45,19 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 
 	azureMonthlyUsage, err := c.GetBillingData()
 	if err != nil {
+		c.log.Error("Failed to get Azure monthly usage")
 		return datamodels.Reports{}, err
 	}
 	c.log.Debug("Got monthly Azure usage")
 
 	readerCleaner, err := csv.NewReaderCleaner(bytes.NewReader(azureMonthlyUsage), 31)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to Read or Clean Azure reports: %s", err.Error())
+		return datamodels.Reports{}, csv.NewReadCleanError("Azure", err)
 	}
 	reports := []*Usage{}
 	err = csv.GenerateReports(readerCleaner, &reports)
 	if err != nil {
-		return datamodels.Reports{}, fmt.Errorf("Failed to Generate Reports for Azure: %s", err.Error())
+		return datamodels.Reports{}, csv.NewReportParseError("Azure", err)
 	}
 
 	return NewNormalizer(c.log, c.location).Normalize(reports), nil
@@ -71,17 +72,17 @@ func (c Client) GetBillingData() ([]byte, error) {
 
 	req, err := http.NewRequest("GET", reqString, nil)
 	if err != nil {
-		return nil, fmt.Errorf("Creating request for Azure failed: %s", err)
+		return nil, errare.NewCreationError("Azure request", err.Error())
 	}
 	req.Header.Add("authorization", "bearer "+c.accessKey)
 	req.Header.Add("api-version", "1.0")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("Making request to Azure failed: %s", err)
+		return nil, errare.NewRequestError(err, "Azure")
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Azure responded with error: %s", resp.Status)
+		return nil, errare.NewResponseError(resp.Status, "Azure")
 	}
 	defer resp.Body.Close()
 

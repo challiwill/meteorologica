@@ -1,6 +1,5 @@
 CODE CLIMATE
 * backfill tests where necessary (pending tests)
-* make better standaradized error types
 * test time better (eg in gcp client file name generation)
 * make Usage structs have good types
 

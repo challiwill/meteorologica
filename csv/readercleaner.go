@@ -48,16 +48,16 @@ func (rc *ReaderCleaner) ReadAll() ([][]string, error) {
 		return nil, fmt.Errorf("ReadAll Failed: %s", err.Error())
 	}
 	if len(reports) == 0 {
-		return nil, fmt.Errorf("Report is empty")
+		return nil, NewEmptyReportError("")
 	}
 
 	reports = rc.Cleaner.RemoveEmptyRows(reports)
 	if len(reports) == 0 {
-		return nil, fmt.Errorf("Removing empty rows resulted in empty report")
+		return nil, NewEmptyReportError("removing empty rows")
 	}
 	reports = rc.Cleaner.RemoveShortAndTruncateLongRows(reports)
 	if len(reports) == 0 {
-		return nil, fmt.Errorf("Removing short rows resulted in empty report")
+		return nil, NewEmptyReportError("removing short rows")
 	}
 
 	return reports, nil

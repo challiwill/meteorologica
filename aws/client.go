@@ -3,7 +3,6 @@ package aws
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/url"
 	"strconv"
@@ -15,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/challiwill/meteorologica/csv"
 	"github.com/challiwill/meteorologica/datamodels"
+	"github.com/challiwill/meteorologica/errare"
 )
 
 var IAAS = "AWS"
@@ -64,18 +64,19 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 
 	awsMonthlyUsage, err := c.GetBillingData()
 	if err != nil {
-		return datamodels.Reports{}, fmt.Errorf("Failed to get monthly AWS billing data: %s", err.Error())
+		c.log.Error("Failed to get AWS monthly usage")
+		return datamodels.Reports{}, errare.NewRequestError(err, "AWS")
 	}
 	c.log.Debug("Got Monthly AWS usage")
 
 	readerCleaner, err := csv.NewReaderCleaner(bytes.NewReader(awsMonthlyUsage), 29)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to Read or Clean AWS reports: %s", err.Error())
+		return datamodels.Reports{}, csv.NewReadCleanError("AWS", err)
 	}
 	reports := []*Usage{}
 	err = csv.GenerateReports(readerCleaner, &reports)
 	if err != nil {
-		return datamodels.Reports{}, fmt.Errorf("Failed to Generate Reports for AWS: %s", err.Error())
+		return datamodels.Reports{}, csv.NewReportParseError("AWS", err)
 	}
 
 	reports = c.ConsolidateReports(reports)

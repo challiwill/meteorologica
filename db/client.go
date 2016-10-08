@@ -2,13 +2,13 @@ package db
 
 import (
 	"database/sql"
-	"errors"
 	"io/ioutil"
 
 	"github.com/Sirupsen/logrus"
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/challiwill/meteorologica/datamodels"
+	"github.com/challiwill/meteorologica/errare"
 )
 
 //go:generate counterfeiter . DB
@@ -28,7 +28,7 @@ type Client struct {
 
 func NewClient(log *logrus.Logger, username, password, address, name string) (*Client, error) {
 	if username == "" && password != "" {
-		return nil, errors.New("Cannot have a database password without a username. Please set the DB_PASSWORD environment variable.")
+		return nil, errare.NewCreationError("database client", "cannot have a database password with a username\n Please set the DB_PASSWORD environment variable")
 	}
 
 	conn, err := sql.Open("mysql", username+":"+password+"@"+"tcp("+address+")/"+name)
@@ -54,9 +54,6 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 	c.Log.Debug("Entering db.SaveReports")
 	defer c.Log.Debug("Returning db.SaveReports")
 
-	if len(reports) == 0 {
-		return errors.New("No reports to save")
-	}
 	var multiErr MultiErr
 	for i, r := range reports {
 		c.Log.Debugf("Saving report to database %d of %d...", i, len(reports))
@@ -71,7 +68,7 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 		}
 	}
 
-	if len(multiErr.errs) == len(reports) {
+	if len(multiErr.errs) != 0 && len(multiErr.errs) == len(reports) {
 		return multiErr
 	}
 	return nil

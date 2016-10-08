@@ -1,8 +1,9 @@
 package csv
 
 import (
-	"errors"
 	"strings"
+
+	"github.com/challiwill/meteorologica/errare"
 )
 
 type Cleaner struct {
@@ -11,7 +12,7 @@ type Cleaner struct {
 
 func NewCleaner(expectedLen int) (*Cleaner, error) {
 	if expectedLen < 1 {
-		return nil, errors.New("The expected row length must be a positive integer greater than zero")
+		return nil, errare.NewCreationError("Cleaner", "The expected row length must be a positive integer greater than zero")
 	}
 	return &Cleaner{expectedRowLength: expectedLen}, nil
 }

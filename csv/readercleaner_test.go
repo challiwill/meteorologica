@@ -226,7 +226,7 @@ var _ = Describe("ReaderCleaner", func() {
 
 			It("returns a helpful error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Removing short rows resulted in empty report"))
+				Expect(err.Error()).To(ContainSubstring("removing short rows returned no valid reports"))
 			})
 		})
 
@@ -240,7 +240,7 @@ var _ = Describe("ReaderCleaner", func() {
 
 			It("returns a helpful error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Removing empty rows resulted in empty report"))
+				Expect(err.Error()).To(ContainSubstring("removing empty rows returned no valid reports"))
 			})
 		})
 
