@@ -17,6 +17,7 @@ import (
 	"github.com/challiwill/meteorologica/db"
 	"github.com/challiwill/meteorologica/gcp"
 	"github.com/challiwill/meteorologica/usagedatajob"
+	"github.com/heroku/rollrus"
 	"github.com/robfig/cron"
 )
 
@@ -57,6 +58,15 @@ func main() {
 	log.Level = logrus.InfoLevel
 	if *verboseFlag {
 		log.Level = logrus.DebugLevel
+	}
+	rollbarToken := os.Getenv("ROLLBAR_TOKEN")
+	if rollbarToken != "" {
+		env := os.Getenv("ROLLBAR_ENV")
+		if env == "" {
+			env = "DEVELOPMENT"
+		}
+		log.Infof("Creating Rollbar hook for %s environment", env)
+		log.Hooks.Add(rollrus.NewHook(rollbarToken, env))
 	}
 
 	sfTime, err := time.LoadLocation("America/Los_Angeles")

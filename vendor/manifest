@@ -143,6 +143,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/heroku/rollrus",
+			"repository": "https://github.com/heroku/rollrus",
+			"vcs": "git",
+			"revision": "d20e35b8f9139110607856dfedda27df7b598c08",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/onsi/ginkgo",
 			"repository": "https://github.com/onsi/ginkgo",
 			"vcs": "git",
@@ -159,10 +167,26 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/pkg/errors",
+			"repository": "https://github.com/pkg/errors",
+			"vcs": "git",
+			"revision": "839d9e913e063e28dfd0e6c7b7512793e0a48be9",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/robfig/cron",
 			"repository": "https://github.com/robfig/cron",
 			"vcs": "git",
 			"revision": "9585fd555638e77bba25f25db5c44b41f264aeb7",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/stvp/roll",
+			"repository": "https://github.com/stvp/roll",
+			"vcs": "git",
+			"revision": "d3224df1974948966718ee72f32f6c1bd43f9df7",
 			"branch": "master",
 			"notests": true
 		},
