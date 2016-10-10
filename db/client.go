@@ -78,7 +78,19 @@ func (c *Client) GetUsageMonthToDate(id datamodels.ReportIdentifier) (datamodels
 	c.Log.Debug("Entering db.GetUsageMonthToDate")
 	defer c.Log.Debug("Returning db.GetUsageMonthToDate")
 
-	usageToDate := datamodels.UsageMonthToDate{}
+	var (
+		accountNumber sql.NullString
+		accountName   sql.NullString
+		month         sql.NullString
+		year          sql.NullInt64
+		serviceType   sql.NullString
+		usageQuantity sql.NullFloat64
+		cost          sql.NullFloat64
+		region        sql.NullString
+		unitOfMeasure sql.NullString
+		iaas          sql.NullString
+	)
+
 	err := c.Conn.QueryRow(`
 		SELECT AccountNumber, AccountName, Month, Year, ServiceType, SUM(UsageQuantity), SUM(Cost), Region, UnitOfMeasure, IAAS
 		FROM iaas_billing
@@ -88,9 +100,52 @@ func (c *Client) GetUsageMonthToDate(id datamodels.ReportIdentifier) (datamodels
 		AND ServiceType=?
 		AND Region=?
 		AND IAAS=?`,
-		id.AccountName, id.Month, id.Year, id.ServiceType, id.Region, id.IAAS).Scan(&usageToDate)
+		id.AccountName, id.Month, id.Year, id.ServiceType, id.Region, id.IAAS).Scan(
+		&accountNumber,
+		&accountName,
+		&month,
+		&year,
+		&serviceType,
+		&usageQuantity,
+		&cost,
+		&region,
+		&unitOfMeasure,
+		&iaas,
+	)
 	if err == sql.ErrNoRows {
 		err = nil
+	}
+
+	usageToDate := datamodels.UsageMonthToDate{}
+	if accountNumber.Valid {
+		usageToDate.AccountNumber = accountNumber.String
+	}
+	if accountName.Valid {
+		usageToDate.AccountName = accountName.String
+	}
+	if month.Valid {
+		usageToDate.Month = month.String
+	}
+	if year.Valid {
+		usageToDate.Year = int(year.Int64)
+	}
+	if serviceType.Valid {
+		usageToDate.ServiceType = serviceType.String
+	}
+	if usageQuantity.Valid {
+		usageToDate.UsageQuantity = usageQuantity.Float64
+	}
+	if cost.Valid {
+		usageToDate.Cost = cost.Float64
+	}
+	if region.Valid {
+		usageToDate.Region = region.String
+	}
+	if unitOfMeasure.Valid {
+		usageToDate.UnitOfMeasure = unitOfMeasure.String
+	}
+	if iaas.Valid {
+		usageToDate.IAAS = iaas.String
 	}
 
 	return usageToDate, err

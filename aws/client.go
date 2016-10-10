@@ -3,6 +3,7 @@ package aws
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/url"
 	"strconv"
@@ -167,7 +168,7 @@ func (c Client) CalculateDailyUsages(reports []*Usage) ([]*Usage, error) {
 			Region:        c.Region,
 		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Failed to get usage month-to-date: %s", err.Error())
 		}
 
 		reports[i].DailyUsage = reports[i].UsageQuantity - usageToDate.UsageQuantity
