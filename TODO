@@ -10,10 +10,9 @@ DATABASE
 * make columns not null
 
 CONFIGURATION
+* merge flags with configuration struct
 * properly get DB credentials from env
-* create library (or find library) to load settings cleanly
-* set log level @ env var level also
-* allow storage bucket to be different if desired (or remove storage bucket entirely)
+* allow storage bucket to be different type (eg aws) if desired (or remove storage bucket entirely)
 * 'last job ran' should be stored in DB
 
 FEATURES
@@ -26,4 +25,3 @@ PERFORMANCE
 OTHER SERVICES
 * configurable frontend as a micro service
 * usage alerting service
-* healthcheck service?

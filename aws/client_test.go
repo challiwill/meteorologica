@@ -35,7 +35,7 @@ var _ = Describe("Client", func() {
 		log.Out = logOutput
 		s3Client = new(awsfakes.FakeS3Client)
 		dbClient = new(awsfakes.FakeReportsDatabase)
-		client = NewClient(log, time.Now().Location(), "my-region", "my-bucket", "my-account-number", s3Client, dbClient)
+		client = NewClient(log, time.Now().Location(), "my-region", "my-bucket", 1234567890, s3Client, dbClient)
 	})
 
 	Describe("Name", func() {
@@ -77,9 +77,9 @@ var _ = Describe("Client", func() {
 				object := s3Client.GetObjectArgsForCall(0)
 				Expect(object.Bucket).To(Equal(aws.String("my-bucket")))
 
-				expectedFileName := fmt.Sprintf("my-account-number-aws-billing-csv-%d-%d.csv", time.Now().Year(), time.Now().Month())
+				expectedFileName := fmt.Sprintf("1234567890-aws-billing-csv-%d-%d.csv", time.Now().Year(), time.Now().Month())
 				if time.Now().Month() < 10 {
-					expectedFileName = fmt.Sprintf("my-account-number-aws-billing-csv-%d-0%d.csv", time.Now().Year(), time.Now().Month())
+					expectedFileName = fmt.Sprintf("1234567890-aws-billing-csv-%d-0%d.csv", time.Now().Year(), time.Now().Month())
 				}
 				Expect(object.Key).To(Equal(aws.String(expectedFileName)))
 			})
@@ -270,18 +270,6 @@ var _ = Describe("Client", func() {
 
 		JustBeforeEach(func() {
 			populatedReports, err = client.CalculateDailyUsages(originalReports)
-		})
-
-		Context("when there is no database", func() {
-			BeforeEach(func() {
-				dbClient = nil
-				client = NewClient(log, time.Now().Location(), "my-region", "my-bucket", "my-account-number", s3Client, nil)
-			})
-
-			It("errors", func() {
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("no database connected"))
-			})
 		})
 
 		Context("when a database is connected", func() {

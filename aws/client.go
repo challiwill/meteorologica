@@ -2,7 +2,6 @@ package aws
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -34,7 +33,7 @@ type ReportsDatabase interface {
 
 type Client struct {
 	Bucket        string
-	AccountNumber string
+	AccountNumber int64
 	Region        string
 	s3            S3Client
 	log           *logrus.Logger
@@ -42,7 +41,7 @@ type Client struct {
 	db            ReportsDatabase
 }
 
-func NewClient(log *logrus.Logger, location *time.Location, az, bucketName, accountNumber string, s3Client S3Client, db ReportsDatabase) *Client {
+func NewClient(log *logrus.Logger, location *time.Location, az, bucketName string, accountNumber int64, s3Client S3Client, db ReportsDatabase) *Client {
 	return &Client{
 		Bucket:        bucketName,
 		AccountNumber: accountNumber,
@@ -144,9 +143,6 @@ func sumReports(one *Usage, two *Usage) *Usage {
 func (c Client) CalculateDailyUsages(reports []*Usage) ([]*Usage, error) {
 	// TODO this should become part of the normalizer in some ways (like a
 	// NormalizeReportIdentifier() function)
-	if c.db == nil {
-		return nil, errors.New("no database connected")
-	}
 	for i, report := range reports {
 		accountName := report.LinkedAccountName
 		if accountName == "" {
@@ -180,7 +176,7 @@ func (c Client) CalculateDailyUsages(reports []*Usage) ([]*Usage, error) {
 func (c Client) monthlyBillingFileName() string {
 	year, month, _ := time.Now().In(c.location).Date()
 	monthStr := padMonth(month)
-	return url.QueryEscape(strings.Join([]string{c.AccountNumber, "aws", "billing", "csv", strconv.Itoa(year), monthStr}, "-") + ".csv")
+	return url.QueryEscape(strings.Join([]string{strconv.FormatInt(c.AccountNumber, 10), "aws", "billing", "csv", strconv.Itoa(year), monthStr}, "-") + ".csv")
 }
 
 func padMonth(month time.Month) string {

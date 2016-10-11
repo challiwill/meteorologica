@@ -1,0 +1,3 @@
+#!/bin/bash
+
+CONFIGOR_ENV=development go run main.go $@

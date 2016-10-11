@@ -2,6 +2,7 @@ package azure
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,12 +19,12 @@ type Client struct {
 	URL        string
 	client     *http.Client
 	accessKey  string
-	enrollment string
+	enrollment int
 	log        *logrus.Logger
 	location   *time.Location
 }
 
-func NewClient(log *logrus.Logger, location *time.Location, serverURL, key, enrollment string) *Client {
+func NewClient(log *logrus.Logger, location *time.Location, serverURL, key string, enrollment int) *Client {
 	return &Client{
 		URL:        serverURL,
 		client:     new(http.Client),
@@ -67,7 +68,7 @@ func (c Client) GetBillingData() ([]byte, error) {
 	c.log.Debug("Entering azure.GetBillingData")
 	defer c.log.Debug("Returning azure.GetBillingData")
 
-	reqString := strings.Join([]string{c.URL, "rest", c.enrollment, "usage-report?type=detail"}, "/")
+	reqString := strings.Join([]string{c.URL, "rest", strconv.Itoa(c.enrollment), "usage-report?type=detail"}, "/")
 	c.log.Debug("Making Azure billing request to address: ", reqString)
 
 	req, err := http.NewRequest("GET", reqString, nil)

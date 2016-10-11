@@ -65,47 +65,62 @@ Metrics and logs available at [https://metrics.run.pivotal.io](https://metrics.r
 ##Environment Needed:
 Be careful not to upload any credentials to Github as this repository is Public.
 
+To set the environment between `production`, or the default `development` set the environment variable
+(this only matters for logging at the moment, `development` logs at the `debug` level, `production` logs at `warn` level):
+```
+M_ENV=production
+```
+
+Configuration of the following integrations is available through `Environment Variables`, `configuration/meteorologica.{ENVIRONMENT}.yml`, `configuration/meteorologica.yml` in that order of priority.
+If setting an environment variable it is all caps, and of the form `M_SERVICE_VARIABLE_NAME` where `M` is a prefix for this application,
+`SERVICE` is the respective service (eg `GCP`, `AZURE`, `AWS`, `ROLLBAR`),
+and `VARIABLE` is the value that needs to get conveyed as described below, where camel case is translated to underscore separated (eg: `M_AZURE_ACCESS_KEY=my-access-key`).
+If creating a `.yml` configuration file set the variables as shown below.
+
 ###GCP:
 You need to generate and download a
 [service_account_credential](https://cloud.google.com/storage/docs/authentication#service_accounts).
-Provide a path to the file as an environment variable.
+Provide a path to the file as a variable.
 The file should probably be uploaded to wherever the app is running along with the app (for example in a `credentials/` directory).
 
 You must provide the name of the bucket that holds the billing information files, and the name of the bucket where you would like the final .csv to end up.
 The billing files are assumed to have the naming format `Billing-YYYY-MM-DD.csv`.
-```
-GOOGLE_APPLICATION_CREDENTIALS=./path/to/service_account_credential.json
-GCP_BUCKET_NAME=my-bucket
-
-STORAGE_BUCKET_NAME=my-final-bucket
+``` yml
+gcp:
+  bucket-name: my-bucket
+  application-credentials-path: ./path/to/service_account_credential.json
+  storage-bucket-name: my-final-bucket
 ```
 
 ###AWS:
 You need to provide credentials and configuration options.
 The master account number is the account number for the billing management account.
-```
-AWS_REGION=us-east-1
-AWS_MASTER_ACCOUNT_NUMBER=12345
-AWS_BUCKET_NAME=bucket-name
-AWS_ACCESS_KEY_ID=acess-key-id
-AWS_SECRET_ACCESS_KEY=secret-access-key
+``` yml
+aws:
+  region: us-east-1
+  master-account-number: 12345
+  bucket-name: bucket-name
+  access-key-id: access-key-id
+  secret-access-key: secret-access-key
 ```
 
 
 ###Azure:
-You need to provide the API Access Key and your Enrollment Number as environment variables.
-```
-AZURE_ENROLLMENT_NUMBER=12345
-AZURE_ACCESS_KEY=api-access-key
+You need to provide the API Access Key and your Enrollment Number.
+``` yml
+azure:
+  enrollment-number: 12345
+  access-key: api-access-key
 ```
 
 ### MySQL Database:
-If you would like to connect to a MySQL database the following environment variables must be set as needed:
-```
-DB_USERNAME=account-username
-DB_PASSWORD=account-password
-DB_ADDRESS=hotname:port
-DB_NAME=database-name
+If you would like to connect to a MySQL database the following variables must be set as needed:
+``` yml
+db:
+  username: account-username
+  password: account-password
+  address: hostname:port
+  name: database-name
 ```
 
 The expected schema is (`VARCHAR` and `CHAR` should be adjusted as necessary):
@@ -113,12 +128,12 @@ The expected schema is (`VARCHAR` and `CHAR` should be adjusted as necessary):
 CREATE TABLE database-name.iaas_billing (
   AccountNumber VARCHAR(15),
   AccountName VARCHAR(30),
-  Day CHAR(2),
+  Day TINYINT(2),
   Month CHAR(9),
-  Year CHAR(5),
+  Year SMALLINT(4),
   ServiceType VARCHAR(30),
-  UsageQuantity VARCHAR(10),
-  Cost VARCHAR(10),
+  UsageQuantity DOUBLE,
+  Cost DECIMAL(15,2),
   Region VARCHAR(10),
   UnitOfMeasure VARCHAR(10),
   IAAS VARCHAR(10),

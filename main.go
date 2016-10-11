@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -18,10 +19,45 @@ import (
 	"github.com/challiwill/meteorologica/gcp"
 	"github.com/challiwill/meteorologica/usagedatajob"
 	"github.com/heroku/rollrus"
+	"github.com/jinzhu/configor"
 	"github.com/robfig/cron"
 )
 
 type Client interface{}
+
+var Config = struct {
+	Port              int    `default:"8080"`
+	StorageBucketName string `yaml:"storage-bucket-name" env:"M_STORAGE_BUCKET_NAME"`
+
+	Azure struct {
+		AccessKey        string `yaml:"access-key" env:"M_AZURE_ACCESS_KEY"`
+		EnrollmentNumber int    `yaml:"enrollment-number" env:"M_AZURE_ENROLLMENT_NUMBER"`
+	}
+
+	GCP struct {
+		BucketName                 string `yaml:"bucket-name" env:"M_GCP_BUCKET_NAME"`
+		ApplicationCredentialsPath string `yaml:"application-credentials-path" env:"M_GCP_APPLICATION_CREDENTIALS_PATH"`
+	}
+
+	AWS struct {
+		Region              string
+		MasterAccountNumber int64  `yaml:"master-account-number" env:"M_AWS_MASTER_ACCOUNT_NUMBER"`
+		BucketName          string `yaml:"bucket-name" env:"M_AWS_BUCKET_NAME"`
+		AccessKeyID         string `yaml:"access-key-id" env:"M_AWS_ACCESS_KEY_ID"`
+		SecretAccessKey     string `yaml:"secret-access-key" env:"M_AWS_SECRET_ACCESS_KEY"`
+	}
+
+	DB struct {
+		Username string
+		Password string
+		Address  string
+		Name     string
+	}
+
+	Rollbar struct {
+		Token string
+	}
+}{}
 
 var (
 	azureFlag     = flag.Bool("azure", false, "Only retrieve Azure data (by default Azure, AWS, and GCP data is retrieved)")
@@ -37,37 +73,14 @@ var (
 )
 
 func main() {
+	os.Setenv("CONFIGOR_ENV_PREFIX", "M")
+	err := configor.Load(&Config, "configuration/meteorologica.yml")
+	if err != nil {
+		logrus.Fatalf("Failed to load configuration: %s", err.Error())
+	}
 	flag.Parse()
-
-	getAll := !(*azureFlag) && !(*gcpFlag) && !(*awsFlag)
-	getAzure := *azureFlag || getAll
-	getGCP := *gcpFlag || getAll
-	getAWS := *awsFlag || getAll
-
-	keepFile := *fileFlag
-	localOnly := *localOnlyFlag
-	dbf := *dbFlag
-	bkf := *bucketFlag
-	saveToDB := (dbf || (!dbf && !bkf)) && !localOnly
-	saveToBucket := (bkf || (!dbf && !bkf)) && !localOnly
-
-	migrate := *migrateFlag
-
-	log := logrus.New()
-	log.Out = os.Stdout
-	log.Level = logrus.InfoLevel
-	if *verboseFlag {
-		log.Level = logrus.DebugLevel
-	}
-	rollbarToken := os.Getenv("ROLLBAR_TOKEN")
-	if rollbarToken != "" {
-		env := os.Getenv("ROLLBAR_ENV")
-		if env == "" {
-			env = "DEVELOPMENT"
-		}
-		log.Infof("Creating Rollbar hook for %s environment", env)
-		log.Hooks.Add(rollrus.NewHook(rollbarToken, env))
-	}
+	keepFile, saveToDB, saveToBucket, getAzure, getGCP, getAWS, migrate := parseFlags()
+	log := configureLog()
 
 	sfTime, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
@@ -81,7 +94,7 @@ func main() {
 	var dbClient *db.Client
 	if saveToDB || migrate {
 		log.Debug("Creating DB Client")
-		dbClient, err = db.NewClient(log, os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_ADDRESS"), os.Getenv("DB_NAME"))
+		dbClient, err = db.NewClient(log, Config.DB.Username, Config.DB.Password, Config.DB.Address, Config.DB.Name)
 		if err != nil {
 			log.Fatal("Failed to create database client: ", err.Error())
 		}
@@ -106,28 +119,24 @@ func main() {
 	// Azure Client
 	if getAzure {
 		log.Debug("Creating Azure Client")
-		accessKey := os.Getenv("AZURE_ACCESS_KEY")
-		enrollmentNumber := os.Getenv("AZURE_ENROLLMENT_NUMBER")
-		if accessKey == "" || enrollmentNumber == "" {
-			log.Fatal("Azure requires AZURE_ACCESS_KEY and AZURE_ENROLLMENT_NUMBER environment variables to be set")
+		if Config.Azure.AccessKey == "" || Config.Azure.EnrollmentNumber == 0 {
+			log.Fatal("Azure requires access-key and enrollment-number to be configured")
 		}
-		azureClient := azure.NewClient(log, sfTime, "https://ea.azure.com/", accessKey, enrollmentNumber)
+		azureClient := azure.NewClient(log, sfTime, "https://ea.azure.com/", Config.Azure.AccessKey, Config.Azure.EnrollmentNumber)
 		iaasClients = append(iaasClients, azureClient)
 	}
 
 	// GCP Client
 	if getGCP {
 		log.Debug("Creating GCP Client")
-		credentialsFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
-		bucketName := os.Getenv("GCP_BUCKET_NAME")
-		if credentialsFile == "" || bucketName == "" {
-			log.Fatal("GCP requires GCP_BUCKET_NAME and GOOGLE_APPLICATION_CREDENTIALS environment variables to be set")
+		if Config.GCP.ApplicationCredentialsPath == "" || Config.GCP.BucketName == "" {
+			log.Fatal("GCP requires bucket-name and application-credentials-path to be configured")
 		}
-		gcpCredentials, err := ioutil.ReadFile(credentialsFile)
+		gcpCredentials, err := ioutil.ReadFile(Config.GCP.ApplicationCredentialsPath)
 		if err != nil {
 			log.Fatal("Failed to create GCP credentials: ", err.Error())
 		}
-		gcpClient, err := gcp.NewClient(log, sfTime, gcpCredentials, bucketName)
+		gcpClient, err := gcp.NewClient(log, sfTime, gcpCredentials, Config.GCP.BucketName)
 		if err != nil {
 			log.Fatal("Failed to create GCP client: ", err.Error())
 		}
@@ -137,19 +146,17 @@ func main() {
 	// BucketClient
 	if saveToBucket {
 		log.Debug("Creating Bucket Client (GCP)")
-		credentialsFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
-		if credentialsFile == "" {
-			log.Fatal("To store the file Meteorologica requires GOOGLE_APPLICATION_CREDENTIALS environment variable to be set")
+		if Config.GCP.ApplicationCredentialsPath == "" {
+			log.Fatal("To store the file Meteorologica requires application-credentials-path to be configured")
 		}
-		bucketName := os.Getenv("STORAGE_BUCKET_NAME")
-		if credentialsFile == "" {
-			log.Fatal("To store the file Meteorologica requires STORAGE_BUCKET_NAME environment variable to be set")
+		if Config.StorageBucketName == "" {
+			log.Fatal("To store the file Meteorologica requires storage-bucket-name to be configured")
 		}
-		gcpCredentials, err := ioutil.ReadFile(credentialsFile)
+		gcpCredentials, err := ioutil.ReadFile(Config.GCP.ApplicationCredentialsPath)
 		if err != nil {
 			log.Fatal("Failed to create Bucket (GCP) credentials: ", err.Error())
 		}
-		gcpClient, err := gcp.NewClient(log, sfTime, gcpCredentials, bucketName)
+		gcpClient, err := gcp.NewClient(log, sfTime, gcpCredentials, Config.StorageBucketName)
 		if err != nil {
 			log.Fatal("Failed to create Bucket (GCP) client: ", err.Error())
 		}
@@ -159,17 +166,27 @@ func main() {
 	// AWS Client
 	if getAWS {
 		log.Debug("Creating AWS Client")
-		az := os.Getenv("AWS_REGION")
-		bucketName := os.Getenv("AWS_BUCKET_NAME")
-		accountNumber := os.Getenv("AWS_MASTER_ACCOUNT_NUMBER")
-		if az == "" || bucketName == "" || accountNumber == "" {
-			log.Fatal("AWS requires AWS_REGION, AWS_BUCKET_NAME, and AWS_MASTER_ACCOUNT_NUMBER environment variables to be set")
+		if Config.AWS.Region == "" {
+			log.Fatal("AWS requires region to be configured")
 		}
-		sess, err := session.NewSession(&awssdk.Config{Region: awssdk.String(az)})
+		if Config.AWS.BucketName == "" {
+			log.Fatal("AWS requires bucket-name to be configured")
+		}
+		if Config.AWS.MasterAccountNumber == int64(0) {
+			log.Fatal("AWS requires master_account_number to be configured")
+		}
+		os.Setenv("AWS_ACCESS_KEY_ID", Config.AWS.AccessKeyID)
+		os.Setenv("AWS_SECRET_ACCESS_KEY", Config.AWS.SecretAccessKey)
+		sess, err := session.NewSession(&awssdk.Config{Region: awssdk.String(Config.AWS.Region)})
 		if err != nil {
 			log.Fatal("Failed to create AWS credentials: ", err.Error())
 		}
-		awsClient := aws.NewClient(log, sfTime, az, bucketName, accountNumber, s3.New(sess), dbClient)
+		var reportsDatabase aws.ReportsDatabase
+		reportsDatabase = dbClient
+		if dbClient == nil {
+			reportsDatabase = db.NewNullClient()
+		}
+		awsClient := aws.NewClient(log, sfTime, Config.AWS.Region, Config.AWS.BucketName, Config.AWS.MasterAccountNumber, s3.New(sess), reportsDatabase)
 		iaasClients = append(iaasClients, awsClient)
 	}
 
@@ -200,9 +217,36 @@ func main() {
 			len(c.Entries()),
 		)
 	})
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(Config.Port), nil))
+}
+
+func parseFlags() (bool, bool, bool, bool, bool, bool, bool) {
+	getAll := !(*azureFlag) && !(*gcpFlag) && !(*awsFlag)
+	localOnly := *localOnlyFlag
+	dbf := *dbFlag
+	bkf := *bucketFlag
+
+	keepFile := *fileFlag
+	saveToDB := (dbf || (!dbf && !bkf)) && !localOnly
+	saveToBucket := (bkf || (!dbf && !bkf)) && !localOnly
+	getAzure := *azureFlag || getAll
+	getGCP := *gcpFlag || getAll
+	getAWS := *awsFlag || getAll
+	migrate := *migrateFlag
+	return keepFile, saveToDB, saveToBucket, getAzure, getGCP, getAWS, migrate
+}
+
+func configureLog() *logrus.Logger {
+	log := logrus.New()
+	log.Out = os.Stdout
+	log.Level = logrus.InfoLevel
+	env := configor.ENV()
+	if *verboseFlag || env == "development" {
+		log.Level = logrus.DebugLevel
 	}
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	if Config.Rollbar.Token != "" {
+		log.Infof("Creating Rollbar hook for %s environment", env)
+		log.Hooks.Add(rollrus.NewHook(Config.Rollbar.Token, env))
+	}
+	return log
 }

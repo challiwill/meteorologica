@@ -20,7 +20,7 @@ var _ = Describe("Azure", func() {
 
 	BeforeEach(func() {
 		azureServer = ghttp.NewServer()
-		client = azure.NewClient(logrus.New(), time.Now().Location(), azureServer.URL(), "some-key", "1337")
+		client = azure.NewClient(logrus.New(), time.Now().Location(), azureServer.URL(), "some-key", 1337)
 	})
 
 	AfterEach(func() {

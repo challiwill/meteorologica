@@ -1,0 +1,3 @@
+#!/bin/bash
+
+cf set-env meteorologica CONFIGOR_ENV production
