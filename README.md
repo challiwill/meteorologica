@@ -124,7 +124,7 @@ db:
 ```
 
 The expected schema is (`VARCHAR` and `CHAR` should be adjusted as necessary):
-```
+``` sql
 CREATE TABLE database-name.iaas_billing (
   AccountNumber VARCHAR(15),
   AccountName VARCHAR(30),
