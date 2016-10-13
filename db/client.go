@@ -56,7 +56,9 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 
 	var multiErr MultiErr
 	for i, r := range reports {
-		c.Log.Debugf("Saving report to database %d of %d...", i, len(reports))
+		if i%100 == 0 {
+			c.Log.Debugf("Saving report to database %d of %d...", i, len(reports))
+		}
 		_, err := c.Conn.Exec(`
 		INSERT IGNORE INTO iaas_billing
 		(AccountNumber, AccountName, Day, Month, Year, ServiceType, UsageQuantity, Cost, Region, UnitOfMeasure, IAAS)

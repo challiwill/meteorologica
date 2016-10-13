@@ -241,7 +241,7 @@ func configureLog() *logrus.Logger {
 	log.Out = os.Stdout
 	log.Level = logrus.InfoLevel
 	env := configor.ENV()
-	if *verboseFlag || env == "development" {
+	if (*verboseFlag || env == "development") && *verboseFlag != false {
 		log.Level = logrus.DebugLevel
 	}
 	if Config.Rollbar.Token != "" {
