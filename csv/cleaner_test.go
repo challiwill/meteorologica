@@ -13,8 +13,13 @@ var _ = Describe("Cleaner", func() {
 		err     error
 	)
 
+	BeforeEach(func() {
+		cleaner, err = NewCleaner(3, 2)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	Describe("NewCleaner", func() {
-		Context("with a negative expected length", func() {
+		Context("with a negative maximum length", func() {
 			BeforeEach(func() {
 				cleaner, err = NewCleaner(-1)
 			})
@@ -25,7 +30,7 @@ var _ = Describe("Cleaner", func() {
 			})
 		})
 
-		Context("with a zero expected length", func() {
+		Context("with a zero maximum length", func() {
 			BeforeEach(func() {
 				cleaner, err = NewCleaner(0)
 			})
@@ -36,7 +41,7 @@ var _ = Describe("Cleaner", func() {
 			})
 		})
 
-		Context("with a positive expected length", func() {
+		Context("with a positive maximum length", func() {
 			BeforeEach(func() {
 				cleaner, err = NewCleaner(1)
 			})
@@ -44,6 +49,63 @@ var _ = Describe("Cleaner", func() {
 			It("works", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cleaner).NotTo(BeNil())
+			})
+		})
+
+		Context("with a positive minimum length", func() {
+			Context("less than the maximum length", func() {
+				BeforeEach(func() {
+					cleaner, err = NewCleaner(2, 1)
+				})
+
+				It("works", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(cleaner).NotTo(BeNil())
+				})
+			})
+
+			Context("equal to the maximum length", func() {
+				BeforeEach(func() {
+					cleaner, err = NewCleaner(1, 1)
+				})
+
+				It("works", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(cleaner).NotTo(BeNil())
+				})
+			})
+
+			Context("greater than the maximum length", func() {
+				BeforeEach(func() {
+					cleaner, err = NewCleaner(1, 2)
+				})
+
+				It("errors", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("greater than"))
+				})
+			})
+		})
+
+		Context("with a negative minimum length", func() {
+			BeforeEach(func() {
+				cleaner, err = NewCleaner(1, -1)
+			})
+
+			It("works", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cleaner).NotTo(BeNil())
+			})
+		})
+
+		Context("with too many arguments", func() {
+			BeforeEach(func() {
+				cleaner, err = NewCleaner(1, 2, 3)
+			})
+
+			It("errors", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Too many arguments"))
 			})
 		})
 	})
@@ -56,8 +118,6 @@ var _ = Describe("Cleaner", func() {
 			)
 
 			BeforeEach(func() {
-				cleaner, err = NewCleaner(3)
-				Expect(err).NotTo(HaveOccurred())
 				original = CSV{
 					[]string{"first header", " second hearder", "third header"},
 					[]string{"one value", "two value", "three value"},
@@ -128,6 +188,7 @@ var _ = Describe("Cleaner", func() {
 				original = CSV{
 					[]string{"three", "is", "key"},
 					[]string{"fewer", "values"},
+					[]string{"fewest"},
 					[]string{"more", "really", "is", "better"},
 					[]string{"", "", "", "", ""},
 				}
@@ -137,9 +198,10 @@ var _ = Describe("Cleaner", func() {
 				cleaned = cleaner.RemoveShortAndTruncateLongRows(original)
 			})
 
-			It("removes rows that don't have the right length", func() {
+			It("removes rows that are too short and truncates rows that are too long", func() {
 				expectedCSV := CSV{
 					[]string{"three", "is", "key"},
+					[]string{"fewer", "values"},
 					[]string{"more", "really", "is"},
 					[]string{"", "", ""},
 				}
@@ -191,7 +253,9 @@ var _ = Describe("Cleaner", func() {
 				original = CSV{
 					[]string{"first header", " second hearder", "third header"},
 					[]string{"fewer", "values"},
+					[]string{"fewest"},
 					[]string{"", ""},
+					[]string{""},
 					[]string{"three", "is", "key"},
 					[]string{"more", "really", "is", "better"},
 					[]string{"", "", ""},
@@ -206,6 +270,8 @@ var _ = Describe("Cleaner", func() {
 			It("removes rows that don't have the right length", func() {
 				expectedCSV := CSV{
 					[]string{"first header", " second hearder", "third header"},
+					[]string{"fewer", "values"},
+					[]string{"", ""},
 					[]string{"three", "is", "key"},
 					[]string{"", "", ""},
 				}

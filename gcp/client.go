@@ -72,11 +72,7 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	monthlyReport := []*Usage{}
 	for i, usage := range gcpMonthlyUsage {
 		var readerCleaner *csv.ReaderCleaner
-		if i == 0 {
-			readerCleaner, err = csv.NewReaderCleaner(bytes.NewReader(usage), 18) // only 18 on the first of the month
-		} else {
-			readerCleaner, err = csv.NewReaderCleaner(bytes.NewReader(usage), 14)
-		}
+		readerCleaner, err = csv.NewReaderCleaner(bytes.NewReader(usage), 14, 18) // ambiguously 18 and 14...
 		if err != nil {
 			return datamodels.Reports{}, err
 		}

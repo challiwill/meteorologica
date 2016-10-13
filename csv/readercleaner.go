@@ -2,6 +2,7 @@ package csv
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 )
@@ -16,8 +17,21 @@ type ReaderCleaner struct {
 	Cleaner *Cleaner
 }
 
-func NewReaderCleaner(body io.Reader, rowLen int) (*ReaderCleaner, error) {
-	cleaner, err := NewCleaner(rowLen)
+func NewReaderCleaner(body io.Reader, rowLen ...int) (*ReaderCleaner, error) {
+	var max, min int
+	switch {
+	case len(rowLen) == 0:
+		return nil, errors.New("Please provide an expected row length")
+	case len(rowLen) == 1:
+		max = rowLen[0]
+	case len(rowLen) == 2:
+		max = rowLen[0]
+		min = rowLen[1]
+	default:
+		return nil, errors.New("Too many length arguments provided to NewReaderCleaner()")
+	}
+
+	cleaner, err := NewCleaner(max, min)
 	if err != nil {
 		return nil, err
 	}

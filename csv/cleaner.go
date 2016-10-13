@@ -1,20 +1,34 @@
 package csv
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/challiwill/meteorologica/errare"
 )
 
 type Cleaner struct {
-	expectedRowLength int
+	maxRowLen int
+	minRowLen int
 }
 
-func NewCleaner(expectedLen int) (*Cleaner, error) {
-	if expectedLen < 1 {
+func NewCleaner(maxRowLen int, minRowSlice ...int) (*Cleaner, error) {
+	if maxRowLen < 1 {
 		return nil, errare.NewCreationError("Cleaner", "The expected row length must be a positive integer greater than zero")
 	}
-	return &Cleaner{expectedRowLength: expectedLen}, nil
+	minRowLen := maxRowLen
+	if len(minRowSlice) == 1 {
+		minRowLen = minRowSlice[0]
+		if minRowLen > maxRowLen {
+			return nil, errare.NewCreationError("Cleaner", fmt.Sprintf("The minimum row length '%d' cannot be greater than the maximum row length '%d'", minRowLen, maxRowLen))
+		}
+	} else if len(minRowSlice) > 1 {
+		return nil, errare.NewCreationError("Cleaner", "Too many arguments provided, requires only maximum row length and minimum row length")
+	}
+	return &Cleaner{
+		maxRowLen: maxRowLen,
+		minRowLen: minRowLen,
+	}, nil
 }
 
 func (c *Cleaner) RemoveEmptyRows(original CSV) CSV {
@@ -31,8 +45,10 @@ func (c *Cleaner) RemoveEmptyRows(original CSV) CSV {
 func (c *Cleaner) RemoveShortAndTruncateLongRows(original CSV) CSV {
 	cleaned := CSV{}
 	for _, row := range original {
-		if len(row) >= c.expectedRowLength {
-			cleaned = append(cleaned, row[:c.expectedRowLength])
+		if len(row) >= c.maxRowLen {
+			cleaned = append(cleaned, row[:c.maxRowLen])
+		} else if len(row) >= c.minRowLen {
+			cleaned = append(cleaned, row)
 		}
 	}
 
@@ -42,8 +58,8 @@ func (c *Cleaner) RemoveShortAndTruncateLongRows(original CSV) CSV {
 func (c *Cleaner) TruncateRows(original CSV) CSV {
 	cleaned := CSV{}
 	for _, row := range original {
-		if len(row) >= c.expectedRowLength {
-			cleaned = append(cleaned, row[:c.expectedRowLength])
+		if len(row) >= c.maxRowLen {
+			cleaned = append(cleaned, row[:c.maxRowLen])
 			continue
 		}
 		cleaned = append(cleaned, row)
@@ -64,7 +80,7 @@ func (c *Cleaner) RemoveIrregularLengthRows(original CSV) CSV {
 }
 
 func (c *Cleaner) IsRegularLengthRow(row []string) bool {
-	return len(row) == c.expectedRowLength
+	return len(row) <= c.maxRowLen && len(row) >= c.minRowLen
 }
 
 func (c *Cleaner) IsFilledRow(row []string) bool {
