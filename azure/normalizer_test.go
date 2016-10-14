@@ -42,18 +42,18 @@ var _ = Describe("Normalizer", func() {
 					SubscriptionGuid:       "some-guid",
 					SubscriptionName:       "some-name",
 					Date:                   "10/01/2016",
-					Month:                  "10",
-					Day:                    "1",
-					Year:                   "2016",
+					Month:                  10,
+					Day:                    1,
+					Year:                   2016,
 					Product:                "some-product",
 					MeterID:                "some-meter",
 					MeterCategory:          "some-category",
 					MeterSubCategory:       "some-sub-category",
 					MeterRegion:            "some-region",
 					MeterName:              "some-meter-name",
-					ConsumedQuantity:       "24.00",
-					ResourceRate:           "0.01",
-					ExtendedCost:           "0.02",
+					ConsumedQuantity:       24.00,
+					ResourceRate:           0.01,
+					ExtendedCost:           0.02,
 					ResourceLocation:       "westus",
 					ConsumedService:        "some-service-type",
 					InstanceID:             "some-instance-id",
@@ -75,18 +75,18 @@ var _ = Describe("Normalizer", func() {
 					SubscriptionGuid:       "some-other-guid",
 					SubscriptionName:       "some-other-name",
 					Date:                   "10/01/2016",
-					Month:                  "10",
-					Day:                    "1",
-					Year:                   "2016",
+					Month:                  10,
+					Day:                    1,
+					Year:                   2016,
 					Product:                "some-other-product",
 					MeterID:                "some-other-meter",
 					MeterCategory:          "some-other-category",
 					MeterSubCategory:       "some-other-sub-category",
 					MeterRegion:            "some-other-region",
 					MeterName:              "some-other-meter-name",
-					ConsumedQuantity:       "22.00",
-					ResourceRate:           "2.01",
-					ExtendedCost:           "4.02",
+					ConsumedQuantity:       22.00,
+					ResourceRate:           2.01,
+					ExtendedCost:           4.02,
 					ResourceLocation:       "eastus",
 					ConsumedService:        "some-other-service-type",
 					InstanceID:             "some-other-instance-id",
@@ -140,138 +140,6 @@ var _ = Describe("Normalizer", func() {
 						UnitOfMeasure: "Hours",
 						IAAS:          "Azure",
 					}))
-				})
-			})
-
-			Context("with invalid extended cost", func() {
-				BeforeEach(func() {
-					usageReports[0].ExtendedCost = "not-a-float"
-				})
-
-				It("returns the same number of reports", func() {
-					Expect(reports).To(HaveLen((len(usageReports))))
-				})
-
-				It("warns that extended cost is invalid", func() {
-					Expect(log.Out).To(Say("extended cost 'not-a-float' is invalid"))
-				})
-
-				It("returns normalized Reports cost set to neutral value 0", func() {
-					Expect(reports[0].Cost).To(Equal(float64(0)))
-				})
-			})
-
-			Context("with invalid consumed quantity", func() {
-				BeforeEach(func() {
-					usageReports[0].ConsumedQuantity = "not-a-float"
-				})
-
-				It("returns the same number of reports", func() {
-					Expect(reports).To(HaveLen((len(usageReports))))
-				})
-
-				It("warns that consumed quantity is invalid", func() {
-					Expect(log.Out).To(Say("consumed quantity 'not-a-float' is invalid"))
-				})
-
-				It("returns normalized Reports usage quantity set to neutral value 0", func() {
-					Expect(reports[0].UsageQuantity).To(Equal(float64(0)))
-				})
-			})
-
-			Context("with invalid day", func() {
-				Context("when not an int", func() {
-					BeforeEach(func() {
-						usageReports[0].Day = "not-an-int"
-					})
-
-					It("returns the same number of reports", func() {
-						Expect(reports).To(HaveLen((len(usageReports))))
-					})
-
-					It("warns that day is invalid", func() {
-						Expect(log.Out).To(Say("day is invalid"))
-					})
-
-					It("returns normalized Reports with day set to today", func() {
-						Expect(reports[0].Day).To(Equal(time.Now().Day()))
-					})
-				})
-
-				Context("when invalid int", func() {
-					BeforeEach(func() {
-						usageReports[0].Day = "33"
-					})
-
-					It("returns the same number of reports", func() {
-						Expect(reports).To(HaveLen((len(usageReports))))
-					})
-
-					It("warns that day is invalid", func() {
-						Expect(log.Out).To(Say("day is invalid"))
-					})
-
-					It("returns normalized Reports with day set to today", func() {
-						Expect(reports[0].Day).To(Equal(time.Now().Day()))
-					})
-				})
-			})
-
-			Context("with invalid month", func() {
-				Context("when not an int", func() {
-					BeforeEach(func() {
-						usageReports[0].Month = "not-an-int"
-					})
-
-					It("returns the same number of reports", func() {
-						Expect(reports).To(HaveLen((len(usageReports))))
-					})
-
-					It("warns that month is invalid", func() {
-						Expect(log.Out).To(Say("month is invalid"))
-					})
-
-					It("returns normalized Reports with month set to today", func() {
-						Expect(reports[0].Month).To(Equal(time.Now().Month().String()))
-					})
-				})
-
-				Context("when invalid int", func() {
-					BeforeEach(func() {
-						usageReports[0].Month = "13"
-					})
-
-					It("returns the same number of reports", func() {
-						Expect(reports).To(HaveLen((len(usageReports))))
-					})
-
-					It("warns that month is invalid", func() {
-						Expect(log.Out).To(Say("month is invalid"))
-					})
-
-					It("returns normalized Reports with month set to today", func() {
-						Expect(reports[0].Month).To(Equal(time.Now().Month().String()))
-					})
-				})
-
-				Context("with invalid year", func() {
-					Context("when not an int", func() {
-						BeforeEach(func() {
-							usageReports[0].Year = "not-an-int"
-						})
-
-						It("returns the same number of reports", func() {
-							Expect(reports).To(HaveLen((len(usageReports))))
-						})
-
-						It("warns that year is invalid", func() {
-							Expect(log.Out).To(Say("year is invalid"))
-						})
-
-						It("returns normalized Reports with year set to today", func() {
-							Expect(reports[0].Year).To(Equal(time.Now().Year()))
-						})
-					})
 				})
 			})
 		})

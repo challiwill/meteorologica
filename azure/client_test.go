@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/challiwill/meteorologica/azure"
+	. "github.com/challiwill/meteorologica/azure"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,13 +14,13 @@ import (
 
 var _ = Describe("Azure", func() {
 	var (
-		client      *azure.Client
+		client      *Client
 		azureServer *ghttp.Server
 	)
 
 	BeforeEach(func() {
 		azureServer = ghttp.NewServer()
-		client = azure.NewClient(logrus.New(), time.Now().Location(), azureServer.URL(), "some-key", 1337)
+		client = NewClient(logrus.New(), time.Now().Location(), azureServer.URL(), "some-key", 1337)
 	})
 
 	AfterEach(func() {
