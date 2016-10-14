@@ -81,18 +81,12 @@ func (c *Client) GetUsageMonthToDate(id datamodels.ReportIdentifier) (datamodels
 	defer c.Log.Debug("Returning db.GetUsageMonthToDate")
 
 	var (
-		accountNumber sql.NullString
 		accountName   sql.NullString
-		month         sql.NullString
-		year          sql.NullInt64
-		serviceType   sql.NullString
-		usageQuantity sql.NullFloat64
-		cost          sql.NullFloat64
 		region        sql.NullString
 		unitOfMeasure sql.NullString
-		iaas          sql.NullString
 	)
 
+	usageToDate := datamodels.UsageMonthToDate{}
 	err := c.Conn.QueryRow(`
 		SELECT AccountNumber, AccountName, Month, Year, ServiceType, SUM(UsageQuantity), SUM(Cost), Region, UnitOfMeasure, IAAS
 		FROM iaas_billing
@@ -103,42 +97,23 @@ func (c *Client) GetUsageMonthToDate(id datamodels.ReportIdentifier) (datamodels
 		AND Region=?
 		AND IAAS=?`,
 		id.AccountName, id.Month, id.Year, id.ServiceType, id.Region, id.IAAS).Scan(
-		&accountNumber,
+		&usageToDate.AccountNumber,
 		&accountName,
-		&month,
-		&year,
-		&serviceType,
-		&usageQuantity,
-		&cost,
+		&usageToDate.Month,
+		&usageToDate.Year,
+		&usageToDate.ServiceType,
+		&usageToDate.UsageQuantity,
+		&usageToDate.Cost,
 		&region,
 		&unitOfMeasure,
-		&iaas,
+		&usageToDate.IAAS,
 	)
 	if err == sql.ErrNoRows {
-		err = nil
+		return datamodels.UsageMonthToDate{}, nil
 	}
 
-	usageToDate := datamodels.UsageMonthToDate{}
-	if accountNumber.Valid {
-		usageToDate.AccountNumber = accountNumber.String
-	}
 	if accountName.Valid {
 		usageToDate.AccountName = accountName.String
-	}
-	if month.Valid {
-		usageToDate.Month = month.String
-	}
-	if year.Valid {
-		usageToDate.Year = int(year.Int64)
-	}
-	if serviceType.Valid {
-		usageToDate.ServiceType = serviceType.String
-	}
-	if usageQuantity.Valid {
-		usageToDate.UsageQuantity = usageQuantity.Float64
-	}
-	if cost.Valid {
-		usageToDate.Cost = cost.Float64
 	}
 	if region.Valid {
 		usageToDate.Region = region.String
@@ -146,11 +121,8 @@ func (c *Client) GetUsageMonthToDate(id datamodels.ReportIdentifier) (datamodels
 	if unitOfMeasure.Valid {
 		usageToDate.UnitOfMeasure = unitOfMeasure.String
 	}
-	if iaas.Valid {
-		usageToDate.IAAS = iaas.String
-	}
 
-	return usageToDate, err
+	return usageToDate, nil
 }
 
 func (c *Client) Close() error {
