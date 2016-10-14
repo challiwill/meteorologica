@@ -1,6 +1,7 @@
 package azure
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -71,7 +72,7 @@ func (c Client) GetBillingData() ([]byte, error) {
 	c.log.Debug("Entering azure.GetBillingData")
 	defer c.log.Debug("Returning azure.GetBillingData")
 
-	reqString := strings.Join([]string{c.URL, "rest", strconv.Itoa(c.enrollment), "usage-report?type=detail"}, "/")
+	reqString := strings.Join([]string{c.URL, "rest", strconv.Itoa(c.enrollment), fmt.Sprintf("usage-report?month=2016-0%d&type=detail", datamodels.MONTH)}, "/")
 	c.log.Debug("Making Azure billing request to address: ", reqString)
 
 	req, err := http.NewRequest("GET", reqString, nil)

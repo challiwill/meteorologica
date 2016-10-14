@@ -80,7 +80,7 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 		dailyReport := []*Usage{}
 		err = csv.GenerateReports(readerCleaner, &dailyReport)
 		if err != nil {
-			c.Log.Errorf("Failed to parse GCP usage for day: %d %s: %s", i+1, time.Now().In(c.Location).Month().String(), err.Error())
+			c.Log.Errorf("Failed to parse GCP usage for day: %d %s: %s", i+1, datamodels.MONTH.String(), err.Error())
 			continue
 		}
 		monthlyReport = append(monthlyReport, dailyReport...)
@@ -100,10 +100,10 @@ func (c Client) GetBillingData() (DetailedUsageReport, error) {
 	defer c.Log.Debug("Returning gcp.GetBillingData")
 
 	monthlyUsageReport := DetailedUsageReport{}
-	for i := 1; i < time.Now().In(c.Location).Day(); i++ {
+	for i := 1; i < 31; i++ {
 		dailyUsage, err := c.DailyUsageReport(i)
 		if err != nil {
-			c.Log.Warnf("Failed to get GCP Daily Usage for %s, %d: %s", time.Now().In(c.Location).Month().String(), i, err.Error())
+			c.Log.Warnf("Failed to get GCP Daily Usage for %s, %d: %s", datamodels.MONTH.String(), i, err.Error())
 			continue
 		}
 		monthlyUsageReport = append(monthlyUsageReport, dailyUsage)
@@ -114,8 +114,13 @@ func (c Client) GetBillingData() (DetailedUsageReport, error) {
 func (c Client) DailyUsageReport(day int) ([]byte, error) {
 	c.Log.Debug("Entering gcp.DailyUsageReport")
 	defer c.Log.Debug("Returning gcp.DailyUsageReport")
-
-	resp, err := c.StorageService.DailyUsage(c.BucketName, c.dailyBillingFileName(day))
+	var resp *http.Response
+	var err error
+	if datamodels.MONTH == time.Month(7) || datamodels.MONTH == time.Month(8) {
+		resp, err = c.StorageService.DailyUsage(c.BucketName, datamodels.MONTH.String()+"/"+c.dailyBillingFileName(day))
+	} else {
+		resp, err = c.StorageService.DailyUsage(c.BucketName, c.dailyBillingFileName(day))
+	}
 	if err != nil {
 		return nil, errare.NewRequestError(err, "GCP")
 	}
@@ -153,8 +158,8 @@ func (c Client) PublishFileToBucket(name string) error {
 }
 
 func (c Client) dailyBillingFileName(day int) string {
-	year, month, _ := time.Now().In(c.Location).Date()
-	monthStr := padMonth(month)
+	year, _, _ := time.Now().In(c.Location).Date()
+	monthStr := padMonth(datamodels.MONTH)
 	dayStr := padDay(day)
 	return url.QueryEscape(strings.Join([]string{"Billing", strconv.Itoa(year), monthStr, dayStr}, "-") + ".csv")
 }

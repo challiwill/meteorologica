@@ -82,11 +82,6 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	normalizer := NewNormalizer(c.log, c.location, c.Region)
 	normalizedReports := normalizer.Normalize(reports)
 	normalizedReports = datamodels.ConsolidateReports(normalizedReports)
-	normalizedReports, err = c.CalculateDailyUsages(normalizedReports)
-	if err != nil {
-		return datamodels.Reports{}, err
-	}
-
 	return normalizedReports, nil
 }
 
@@ -130,8 +125,8 @@ func (c Client) CalculateDailyUsages(reports datamodels.Reports) (datamodels.Rep
 }
 
 func (c Client) monthlyBillingFileName() string {
-	year, month, _ := time.Now().In(c.location).Date()
-	monthStr := padMonth(month)
+	year, _, _ := time.Now().In(c.location).Date()
+	monthStr := padMonth(datamodels.MONTH)
 	return url.QueryEscape(strings.Join([]string{strconv.FormatInt(c.AccountNumber, 10), "aws", "billing", "csv", strconv.Itoa(year), monthStr}, "-") + ".csv")
 }
 

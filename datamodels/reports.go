@@ -1,5 +1,7 @@
 package datamodels
 
+import "time"
+
 type ReportIdentifier struct {
 	AccountNumber string
 	AccountName   string
@@ -75,3 +77,5 @@ func sumReports(one Report, two Report) Report {
 	one.Cost += two.Cost
 	return one
 }
+
+var MONTH time.Month

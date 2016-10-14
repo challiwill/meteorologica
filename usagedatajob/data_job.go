@@ -65,12 +65,12 @@ func (j *UsageDataJob) Run() {
 	j.log.Debug("Entering usagedatajob.Run")
 	defer j.log.Debug("Returning usagedatajob.Run")
 
-	runTime := time.Now().In(j.location)
-	j.log.Infof("Running periodic job at %s ...", runTime.String())
+	startTime := time.Now()
+	j.log.Infof("Running job at %s ...", startTime.String())
 
 	normalizedFileName := strings.Join([]string{
-		strconv.Itoa(runTime.Year()),
-		runTime.Month().String(),
+		strconv.Itoa(time.Now().Year()),
+		datamodels.MONTH.String(),
 		"normalized-billing-data.csv",
 	}, "-")
 	normalizedFile, err := os.Create(normalizedFileName)
@@ -98,7 +98,7 @@ func (j *UsageDataJob) Run() {
 		if j.saveFile || j.saveToBucket { // Append to file
 			j.log.Debugf("Writing %s data to file...", iaasClient.Name())
 			if i == 0 {
-				err = gocsv.Marshal(&normalizedData, normalizedFile)
+				err = gocsv.MarshalFile(&normalizedData, normalizedFile)
 			} else {
 				err = gocsv.MarshalWithoutHeaders(&normalizedData, normalizedFile)
 			}
@@ -127,5 +127,5 @@ func (j *UsageDataJob) Run() {
 	}
 
 	finishedTime := time.Now().In(j.location)
-	j.log.Infof("Finished periodic job at %s. It took %s.", finishedTime.String(), finishedTime.Sub(runTime).String())
+	j.log.Infof("Finished job at %s. It took %s.", finishedTime.String(), finishedTime.Sub(startTime).String())
 }

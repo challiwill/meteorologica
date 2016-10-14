@@ -38,16 +38,15 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 		if accountID == "" {
 			accountID = usage.PayerAccountId
 		}
-		t := time.Now().In(n.location)
 		reports = append(reports, datamodels.Report{
 			AccountNumber: accountID,
 			AccountName:   accountName,
-			Day:           t.Day() - 1,
-			Month:         t.Month().String(),
-			Year:          t.Year(),
+			Day:           1,
+			Month:         datamodels.MONTH.String(),
+			Year:          time.Now().Year(),
 			ServiceType:   usage.ProductName,
-			UsageQuantity: usage.DailyUsage,
-			Cost:          usage.DailySpend,
+			UsageQuantity: usage.UsageQuantity,
+			Cost:          usage.TotalCost,
 			Region:        n.az,
 			UnitOfMeasure: "",
 			IAAS:          IAAS,

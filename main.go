@@ -15,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/challiwill/meteorologica/aws"
 	"github.com/challiwill/meteorologica/azure"
+	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/challiwill/meteorologica/db"
 	"github.com/challiwill/meteorologica/gcp"
 	"github.com/challiwill/meteorologica/usagedatajob"
@@ -60,6 +61,7 @@ var Config = struct {
 }{}
 
 var (
+	monthFlag     = flag.Int("month", 1, "specify month to retrieve data for")
 	azureFlag     = flag.Bool("azure", false, "Only retrieve Azure data (by default Azure, AWS, and GCP data is retrieved)")
 	gcpFlag       = flag.Bool("gcp", false, "Only retrieve GCP data (by default Azure, AWS, and GCP data is retrieved)")
 	awsFlag       = flag.Bool("aws", false, "Only retrieve AWS data (by default Azure, AWS, and GCP data is retrieved)")
@@ -81,6 +83,9 @@ func main() {
 	flag.Parse()
 	keepFile, saveToDB, saveToBucket, getAzure, getGCP, getAWS, migrate := parseFlags()
 	log := configureLog()
+
+	datamodels.MONTH = time.Month(*monthFlag)
+	fmt.Println("Getting Usage for month: ", datamodels.MONTH.String())
 
 	sfTime, err := time.LoadLocation("America/Los_Angeles")
 	if err != nil {
@@ -194,11 +199,17 @@ func main() {
 
 	// BILLING DATA
 	if *nowFlag {
-		usageDataJob.Run()
-		if dbClient != nil {
-			dbClient.Close()
-		}
-		os.Exit(0)
+		go func() {
+			usageDataJob.Run()
+			if dbClient != nil {
+				dbClient.Close()
+			}
+			os.Exit(0)
+		}()
+		http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprint(w, "Happily running one-off job.")
+		})
+		go log.Fatal(http.ListenAndServe(":"+strconv.Itoa(Config.Port), nil))
 	}
 
 	c := cron.NewWithLocation(sfTime)
