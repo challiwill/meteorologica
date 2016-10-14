@@ -64,8 +64,6 @@ var _ = Describe("Normalizer", func() {
 					TaxAmount:              "some-tax-amount",
 					TaxType:                "some-tax-type",
 					TotalCost:              1.20,
-					DailySpend:             2.3,
-					DailyUsage:             1.1,
 				},
 				&Usage{
 					InvoiceID:              "some-invoice-id",
@@ -97,8 +95,6 @@ var _ = Describe("Normalizer", func() {
 					TaxAmount:              "some-other-tax-amount",
 					TaxType:                "some-other-tax-type",
 					TotalCost:              13.37,
-					DailySpend:             1.3,
-					DailyUsage:             0.1,
 				},
 			}
 		})
@@ -176,7 +172,6 @@ var _ = Describe("Normalizer", func() {
 							TaxAmount:              "some-tax-amount",
 							TaxType:                "some-tax-type",
 							TotalCost:              1.20,
-							DailySpend:             1.4,
 						},
 					)
 				})

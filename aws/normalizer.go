@@ -57,5 +57,5 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 }
 
 func isNotLineItem(usage *Usage) bool {
-	return usage.RecordType != "PayerLineItem" && usage.RecordType != "LinkedLineItem"
+	return usage.RecordType != "LinkedLineItem"
 }

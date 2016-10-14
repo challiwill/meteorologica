@@ -30,6 +30,4 @@ type Usage struct {
 	TaxAmount              string  `csv:"TaxAmount"`
 	TaxType                string  `csv:"TaxType"`
 	TotalCost              float64 `csv:"TotalCost"`
-	DailySpend             float64 `csv:"-"`
-	DailyUsage             float64 `csv:"-"`
 }
