@@ -1,7 +1,6 @@
 package gcp
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -32,17 +31,6 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 			t = time.Now().In(n.location)
 		}
 
-		quantity, err := strconv.ParseFloat(usage.Measurement1TotalConsumption, 64)
-		if err != nil {
-			n.log.Warn("measurement 1 total consumption '%s' is invalid, using 0", usage.Measurement1TotalConsumption)
-			quantity = 0
-		}
-		cost, err := strconv.ParseFloat(usage.Cost, 64)
-		if err != nil {
-			n.log.Warn("cost '%s' is invalid, using 0", usage.Cost)
-			cost = 0
-		}
-
 		reports = append(reports, datamodels.Report{
 			AccountNumber: usage.ProjectNumber,
 			AccountName:   usage.ProjectID,
@@ -50,8 +38,8 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 			Month:         t.Month().String(),
 			Year:          t.Year(),
 			ServiceType:   usage.Description,
-			UsageQuantity: quantity,
-			Cost:          cost,
+			UsageQuantity: usage.Measurement1TotalConsumption,
+			Cost:          usage.Cost,
 			Region:        "",
 			UnitOfMeasure: usage.Measurement1Units,
 			IAAS:          "GCP",
