@@ -24,6 +24,7 @@ func NewReaderCleaner(body io.Reader, rowLen ...int) (*ReaderCleaner, error) {
 		return nil, errors.New("Please provide an expected row length")
 	case len(rowLen) == 1:
 		max = rowLen[0]
+		min = rowLen[0]
 	case len(rowLen) == 2:
 		max = rowLen[0]
 		min = rowLen[1]

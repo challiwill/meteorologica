@@ -38,7 +38,7 @@ var _ = Describe("ReaderCleaner", func() {
 			})
 		})
 
-		Context("with valid body and row length", func() {
+		Context("with valid body and max row length", func() {
 			BeforeEach(func() {
 				body = new(csvfakes.FakeReader)
 				rowLen = 1
@@ -47,6 +47,21 @@ var _ = Describe("ReaderCleaner", func() {
 			It("works", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rc).NotTo(BeNil())
+			})
+		})
+
+		Context("with valid body and min/max row length", func() {
+			It("works", func() {
+				cleaner, err := NewReaderCleaner(new(csvfakes.FakeReader), 2, 1)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cleaner).NotTo(BeNil())
+			})
+		})
+
+		Context("with valid body and max greater than min", func() {
+			It("errors", func() {
+				_, err := NewReaderCleaner(new(csvfakes.FakeReader), 1, 2)
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})
