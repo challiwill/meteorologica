@@ -89,7 +89,10 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 		return datamodels.Reports{}, csv.NewEmptyReportError("parsing GCP usage")
 	}
 
-	return NewNormalizer(c.Log, c.Location).Normalize(monthlyReport), nil
+	normalizer := NewNormalizer(c.Log, c.Location)
+	normalizedReports := normalizer.Normalize(monthlyReport)
+	normalizedReports = datamodels.ConsolidateReports(normalizedReports)
+	return normalizedReports, nil
 }
 
 func (c Client) GetBillingData() (DetailedUsageReport, error) {

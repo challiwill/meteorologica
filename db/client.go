@@ -60,9 +60,9 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 			c.Log.Debugf("Saving report to database %d of %d...", i, len(reports))
 		}
 		_, err := c.Conn.Exec(`
-		INSERT IGNORE INTO iaas_billing
+		INSERT INTO iaas_billing
 		(AccountNumber, AccountName, Day, Month, Year, ServiceType, UsageQuantity, Cost, Region, UnitOfMeasure, IAAS)
-		values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`, r.AccountNumber, r.AccountName, r.Day, r.Month, r.Year, r.ServiceType, r.UsageQuantity, r.Cost, r.Region, r.UnitOfMeasure, r.IAAS)
 		if err != nil {
 			c.Log.Warn("Failed to save report to database: ", err.Error())
