@@ -102,168 +102,38 @@ var _ = Describe("Client", func() {
 		})
 	})
 
-	Describe("ConsolidateReports", func() {
-		var (
-			reports      []*Usage
-			usageReports []*Usage
-		)
-
-		JustBeforeEach(func() {
-			usageReports = client.ConsolidateReports(reports)
-		})
-
-		Context("with valid reports", func() {
-			BeforeEach(func() {
-				reports = []*Usage{
-					&Usage{
-						InvoiceID:         "one-invoice",
-						PayerAccountId:    "some-account",
-						LinkedAccountId:   "some-other-account",
-						PayerAccountName:  "some-account-name",
-						LinkedAccountName: "some-other-account-name",
-						ProductCode:       "some-product",
-						ProductName:       "some-product-name",
-						UsageQuantity:     0.1,
-						TotalCost:         0.3,
-					},
-					&Usage{
-						InvoiceID:         "one-invoice",
-						PayerAccountId:    "some-account",
-						LinkedAccountId:   "",
-						PayerAccountName:  "some-account-name",
-						LinkedAccountName: "",
-						ProductCode:       "some-product",
-						ProductName:       "some-product-name",
-						UsageQuantity:     0.5,
-						TotalCost:         0.01,
-					},
-					&Usage{
-						InvoiceID:         "one-invoice",
-						PayerAccountId:    "some-account",
-						LinkedAccountId:   "",
-						PayerAccountName:  "some-account-name",
-						LinkedAccountName: "",
-						ProductCode:       "some-product",
-						ProductName:       "some-product-name",
-						UsageQuantity:     0.3,
-						TotalCost:         0.02,
-					},
-					&Usage{
-						InvoiceID:         "one-invoice",
-						PayerAccountId:    "some-account",
-						LinkedAccountId:   "some-real-account",
-						PayerAccountName:  "some-account-name",
-						LinkedAccountName: "some-real-account-name",
-						ProductCode:       "some-other-product",
-						ProductName:       "some-other-product-name",
-						UsageQuantity:     100,
-						TotalCost:         100,
-					},
-					&Usage{
-						InvoiceID:         "one-invoice",
-						PayerAccountId:    "some-account",
-						LinkedAccountId:   "some-other-account",
-						PayerAccountName:  "some-account-name",
-						LinkedAccountName: "some-other-account-name",
-						ProductCode:       "some-other-product",
-						ProductName:       "some-other-product-name",
-						UsageQuantity:     1000,
-						TotalCost:         1000,
-					},
-					&Usage{
-						InvoiceID:         "one-invoice",
-						PayerAccountId:    "some-account",
-						LinkedAccountId:   "some-other-account",
-						PayerAccountName:  "some-account-name",
-						LinkedAccountName: "some-other-account-name",
-						ProductCode:       "some-product",
-						ProductName:       "some-product-name",
-						UsageQuantity:     0.1,
-						TotalCost:         0.3,
-					},
-				}
-			})
-
-			It("returns one aggregate row for matching service type for same account", func() {
-				Expect(len(usageReports)).To(Equal(4))
-				Expect(usageReports).To(ContainElement(
-					&Usage{
-						InvoiceID:         "one-invoice",
-						PayerAccountId:    "some-account",
-						LinkedAccountId:   "some-other-account",
-						PayerAccountName:  "some-account-name",
-						LinkedAccountName: "some-other-account-name",
-						ProductCode:       "some-product",
-						ProductName:       "some-product-name",
-						UsageQuantity:     0.2,
-						TotalCost:         0.6,
-					}))
-				Expect(usageReports).To(ContainElement(
-					&Usage{
-						InvoiceID:         "one-invoice",
-						PayerAccountId:    "some-account",
-						LinkedAccountId:   "",
-						PayerAccountName:  "some-account-name",
-						LinkedAccountName: "",
-						ProductCode:       "some-product",
-						ProductName:       "some-product-name",
-						UsageQuantity:     0.8,
-						TotalCost:         0.03,
-					}))
-				Expect(usageReports).To(ContainElement(
-					&Usage{
-						InvoiceID:         "one-invoice",
-						PayerAccountId:    "some-account",
-						LinkedAccountId:   "some-real-account",
-						PayerAccountName:  "some-account-name",
-						LinkedAccountName: "some-real-account-name",
-						ProductCode:       "some-other-product",
-						ProductName:       "some-other-product-name",
-						UsageQuantity:     100,
-						TotalCost:         100,
-					}))
-				Expect(usageReports).To(ContainElement(
-					&Usage{
-						InvoiceID:         "one-invoice",
-						PayerAccountId:    "some-account",
-						LinkedAccountId:   "some-other-account",
-						PayerAccountName:  "some-account-name",
-						LinkedAccountName: "some-other-account-name",
-						ProductCode:       "some-other-product",
-						ProductName:       "some-other-product-name",
-						UsageQuantity:     1000,
-						TotalCost:         1000,
-					}))
-			})
-		})
-	})
-
 	Describe("CalculateDailyUsages", func() {
 		var (
-			originalReports  []*Usage
-			populatedReports []*Usage
+			originalReports  datamodels.Reports
+			populatedReports datamodels.Reports
 			err              error
 		)
 
 		BeforeEach(func() {
-			originalReports = []*Usage{
-				&Usage{
-					PayerAccountName:  "some-account-name",
-					LinkedAccountName: "some-linked-account-name",
-					PayerAccountId:    "some-account-number",
-					LinkedAccountId:   "some-linked-account-number",
-					ProductName:       "some-service-type",
-					UsageQuantity:     10,
-					TotalCost:         100,
+			originalReports = datamodels.Reports{
+				datamodels.Report{
+					AccountName:   "some-account-name",
+					AccountNumber: "some-account-number",
+					ServiceType:   "some-service-type",
+					UsageQuantity: 10,
+					Cost:          100,
+					IAAS:          "AWS",
+					Day:           1,
+					Month:         "February",
+					Year:          1337,
+					Region:        "my-region",
 				},
-				&Usage{
-					PayerAccountName:  "some-account-name",
-					LinkedAccountName: "",
-					PayerAccountId:    "some-account-number",
-					LinkedAccountId:   "",
-					ProductName:       "some-other-service-type",
-					UsageQuantity:     9,
-					TotalCost:         20,
+				datamodels.Report{
+					AccountName:   "some-account-name",
+					AccountNumber: "some-account-number",
+					ServiceType:   "some-other-service-type",
+					UsageQuantity: 9,
+					Cost:          20,
+					IAAS:          "AWS",
+					Day:           1,
+					Month:         "February",
+					Year:          1337,
+					Region:        "my-region",
 				},
 			}
 		})
@@ -276,23 +146,23 @@ var _ = Describe("Client", func() {
 			It("fetches cost and usage month to date for each report", func() {
 				Expect(dbClient.GetUsageMonthToDateCallCount()).To(Equal(2))
 				Expect(dbClient.GetUsageMonthToDateArgsForCall(0)).To(Equal(datamodels.ReportIdentifier{
-					AccountNumber: "some-linked-account-number",
-					AccountName:   "some-linked-account-name",
+					AccountNumber: "some-account-number",
+					AccountName:   "some-account-name",
 					ServiceType:   "some-service-type",
-					Day:           time.Now().Day(),
-					Month:         time.Now().Month().String(),
-					Year:          time.Now().Year(),
 					IAAS:          "AWS",
+					Day:           1,
+					Month:         "February",
+					Year:          1337,
 					Region:        "my-region",
 				}))
 				Expect(dbClient.GetUsageMonthToDateArgsForCall(1)).To(Equal(datamodels.ReportIdentifier{
 					AccountNumber: "some-account-number",
 					AccountName:   "some-account-name",
 					ServiceType:   "some-other-service-type",
-					Day:           time.Now().Day(),
-					Month:         time.Now().Month().String(),
-					Year:          time.Now().Year(),
 					IAAS:          "AWS",
+					Day:           1,
+					Month:         "February",
+					Year:          1337,
 					Region:        "my-region",
 				}))
 			})
@@ -305,14 +175,12 @@ var _ = Describe("Client", func() {
 
 				BeforeEach(func() {
 					originalReports = append(originalReports,
-						&Usage{
-							PayerAccountName:  "some-account-name",
-							LinkedAccountName: "some-linked-account-name",
-							PayerAccountId:    "some-account-number",
-							LinkedAccountId:   "some-linked-account-number",
-							ProductName:       "some-other-service-type",
-							UsageQuantity:     1,
-							TotalCost:         1,
+						datamodels.Report{
+							AccountName:   "some-linked-account-name",
+							AccountNumber: "some-linked-account-number",
+							ServiceType:   "some-other-service-type",
+							UsageQuantity: 1,
+							Cost:          1,
 						},
 					)
 					returnedUsages = []datamodels.UsageMonthToDate{
@@ -360,15 +228,15 @@ var _ = Describe("Client", func() {
 				})
 
 				It("calculates daily usages when previous use is found", func() {
-					Expect(populatedReports[0].DailyUsage).To(Equal(float64(1)))
-					Expect(populatedReports[0].DailySpend).To(Equal(float64(10)))
-					Expect(populatedReports[1].DailyUsage).To(Equal(float64(2)))
-					Expect(populatedReports[1].DailySpend).To(Equal(float64(1)))
+					Expect(populatedReports[0].UsageQuantity).To(Equal(float64(1)))
+					Expect(populatedReports[0].Cost).To(Equal(float64(10)))
+					Expect(populatedReports[1].UsageQuantity).To(Equal(float64(2)))
+					Expect(populatedReports[1].Cost).To(Equal(float64(1)))
 				})
 
 				It("sets daily amounts to total amounts when no previous usage found", func() {
-					Expect(populatedReports[2].DailySpend).To(Equal(originalReports[2].UsageQuantity))
-					Expect(populatedReports[2].DailyUsage).To(Equal(originalReports[2].TotalCost))
+					Expect(populatedReports[2].Cost).To(Equal(originalReports[2].Cost))
+					Expect(populatedReports[2].UsageQuantity).To(Equal(originalReports[2].UsageQuantity))
 				})
 			})
 

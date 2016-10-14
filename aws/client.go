@@ -79,13 +79,15 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 		return datamodels.Reports{}, csv.NewReportParseError("AWS", err)
 	}
 
-	reports = c.ConsolidateReports(reports)
-	reports, err = c.CalculateDailyUsages(reports)
+	normalizer := NewNormalizer(c.log, c.location, c.Region)
+	normalizedReports := normalizer.Normalize(reports)
+	normalizedReports = datamodels.ConsolidateReports(normalizedReports)
+	normalizedReports, err = c.CalculateDailyUsages(normalizedReports)
 	if err != nil {
 		return datamodels.Reports{}, err
 	}
 
-	return NewNormalizer(c.log, c.location, c.Region).Normalize(reports), nil
+	return normalizedReports, nil
 }
 
 func (c Client) GetBillingData() ([]byte, error) {
@@ -105,70 +107,24 @@ func (c Client) GetBillingData() ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
-func (c Client) ConsolidateReports(reports []*Usage) []*Usage {
-	consolidatedReports := []*Usage{}
-	for _, r := range reports {
-		if i, found := find(consolidatedReports, r); found {
-			consolidatedReports[i] = sumReports(consolidatedReports[i], r)
-			continue
-		}
-		consolidatedReports = append(consolidatedReports, r)
-	}
-	return consolidatedReports
-}
-
-// find returns a found report if account number and service type match
-// TODO it should probably use datamodels.ReportIdentifier's
-
-func find(haystack []*Usage, needle *Usage) (int, bool) {
-	for i, h := range haystack {
-		if h.PayerAccountName == needle.PayerAccountName &&
-			h.LinkedAccountName == needle.LinkedAccountName &&
-			h.ProductName == needle.ProductName {
-			return i, true
-		}
-	}
-	return 0, false
-}
-
-// sumReports only adds the additive fields that we currenlty care about. This
-// might change in the future if we start storing more fields in the database
-
-func sumReports(one *Usage, two *Usage) *Usage {
-	one.UsageQuantity += two.UsageQuantity
-	one.TotalCost += two.TotalCost
-	return one
-}
-
-func (c Client) CalculateDailyUsages(reports []*Usage) ([]*Usage, error) {
-	// TODO this should become part of the normalizer in some ways (like a
-	// NormalizeReportIdentifier() function)
+func (c Client) CalculateDailyUsages(reports datamodels.Reports) (datamodels.Reports, error) {
 	for i, report := range reports {
-		accountName := report.LinkedAccountName
-		if accountName == "" {
-			accountName = report.PayerAccountName
-		}
-		accountID := report.LinkedAccountId
-		if accountID == "" {
-			accountID = report.PayerAccountId
-		}
-
 		usageToDate, err := c.db.GetUsageMonthToDate(datamodels.ReportIdentifier{
-			AccountNumber: accountID,
-			AccountName:   accountName,
-			ServiceType:   report.ProductName,
-			Day:           time.Now().Day(),
-			Month:         time.Now().Month().String(),
-			Year:          time.Now().Year(),
-			IAAS:          IAAS,
-			Region:        c.Region,
+			AccountNumber: report.AccountNumber,
+			AccountName:   report.AccountName,
+			ServiceType:   report.ServiceType,
+			Day:           report.Day,
+			Month:         report.Month,
+			Year:          report.Year,
+			IAAS:          report.IAAS,
+			Region:        report.Region,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get usage month-to-date: %s", err.Error())
 		}
 
-		reports[i].DailyUsage = reports[i].UsageQuantity - usageToDate.UsageQuantity
-		reports[i].DailySpend = reports[i].TotalCost - usageToDate.Cost
+		reports[i].UsageQuantity = reports[i].UsageQuantity - usageToDate.UsageQuantity
+		reports[i].Cost = reports[i].Cost - usageToDate.Cost
 	}
 	return reports, nil
 }

@@ -39,3 +39,39 @@ type Report struct {
 }
 
 type Reports []Report
+
+func ConsolidateReports(reports Reports) Reports {
+	consolidatedReports := Reports{}
+	for _, r := range reports {
+		if i, found := find(consolidatedReports, r); found {
+			consolidatedReports[i] = sumReports(consolidatedReports[i], r)
+			continue
+		}
+		consolidatedReports = append(consolidatedReports, r)
+	}
+	return consolidatedReports
+}
+
+// find returns a found report if account number and service type match
+// TODO it should probably use datamodels.ReportIdentifiers
+
+func find(haystack Reports, needle Report) (int, bool) {
+	for i, h := range haystack {
+		if h.AccountNumber == needle.AccountNumber &&
+			h.ServiceType == needle.ServiceType &&
+			h.Region == needle.Region &&
+			h.IAAS == needle.IAAS &&
+			h.Day == needle.Day &&
+			h.Month == needle.Month &&
+			h.Year == needle.Year {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
+func sumReports(one Report, two Report) Report {
+	one.UsageQuantity += two.UsageQuantity
+	one.Cost += two.Cost
+	return one
+}
