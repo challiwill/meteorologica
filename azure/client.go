@@ -61,7 +61,10 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 		return datamodels.Reports{}, csv.NewReportParseError("Azure", err)
 	}
 
-	return NewNormalizer(c.log, c.location).Normalize(reports), nil
+	normalizer := NewNormalizer(c.log, c.location)
+	normalizedReports := normalizer.Normalize(reports)
+	normalizedReports = datamodels.ConsolidateReports(normalizedReports)
+	return normalizedReports, nil
 }
 
 func (c Client) GetBillingData() ([]byte, error) {
