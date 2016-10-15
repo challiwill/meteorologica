@@ -199,13 +199,16 @@ func main() {
 
 	// BILLING DATA
 	if *nowFlag {
-		go func() {
-			usageDataJob.Run()
-			if dbClient != nil {
-				dbClient.Close()
-			}
-			os.Exit(0)
-		}()
+		if os.Getenv("RAN") != "1" {
+			go func() {
+				usageDataJob.Run()
+				if dbClient != nil {
+					dbClient.Close()
+				}
+				os.Setenv("RAN", "1")
+				os.Exit(0)
+			}()
+		}
 		http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "Happily running one-off job.")
 		})
