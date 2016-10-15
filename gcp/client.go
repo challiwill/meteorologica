@@ -20,6 +20,8 @@ import (
 	storage "google.golang.org/api/storage/v1"
 )
 
+var IAAS = "GCP"
+
 //go:generate counterfeiter . StorageService
 
 type StorageService interface {
@@ -54,7 +56,7 @@ func NewClient(log *logrus.Logger, location *time.Location, jsonCredentials []by
 }
 
 func (c Client) Name() string {
-	return "GCP"
+	return IAAS
 }
 
 func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
@@ -117,10 +119,10 @@ func (c Client) DailyUsageReport(day int) ([]byte, error) {
 
 	resp, err := c.StorageService.DailyUsage(c.BucketName, c.dailyBillingFileName(day))
 	if err != nil {
-		return nil, errare.NewRequestError(err, "GCP")
+		return nil, errare.NewRequestError(err, IAAS)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, errare.NewResponseError(resp.Status, "GCP")
+		return nil, errare.NewResponseError(resp.Status, IAAS)
 	}
 	defer resp.Body.Close()
 

@@ -1,5 +1,10 @@
 package gcp
 
+import (
+	"hash/fnv"
+	"strconv"
+)
+
 type Usage struct {
 	AccountID                    string  `csv:"Account ID"`
 	LineItem                     string  `csv:"Line Item"`
@@ -19,4 +24,10 @@ type Usage struct {
 	ProjectName                  string  `csv:"Project Name"`
 	ProjectLabels                string  `csv:"Project Labels"`
 	Description                  string  `csv:"Description"`
+}
+
+func (u Usage) Hash() string {
+	h := fnv.New32a()
+	h.Write([]byte(u.ProjectNumber + u.StartTime + u.Description + IAAS))
+	return strconv.FormatUint(uint64(h.Sum32()), 10)
 }

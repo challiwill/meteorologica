@@ -25,6 +25,7 @@ type UsageMonthToDate struct {
 }
 
 type Report struct {
+	ID            string  `csv:"ID"`
 	AccountNumber string  `csv:"Account Number"`
 	AccountName   string  `csv:"Account Name"`
 	Day           int     `csv:"Day"`
@@ -57,13 +58,7 @@ func ConsolidateReports(reports Reports) Reports {
 
 func find(haystack Reports, needle Report) (int, bool) {
 	for i, h := range haystack {
-		if h.AccountNumber == needle.AccountNumber &&
-			h.ServiceType == needle.ServiceType &&
-			h.Region == needle.Region &&
-			h.IAAS == needle.IAAS &&
-			h.Day == needle.Day &&
-			h.Month == needle.Month &&
-			h.Year == needle.Year {
+		if h.ID == needle.ID {
 			return i, true
 		}
 	}

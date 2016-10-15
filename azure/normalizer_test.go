@@ -115,6 +115,7 @@ var _ = Describe("Normalizer", func() {
 
 				It("returns properly converted reports", func() {
 					Expect(reports[0]).To(Equal(datamodels.Report{
+						ID:            usageReports[0].Hash(),
 						AccountNumber: "some-guid",
 						AccountName:   "some-name",
 						Day:           1,
@@ -128,6 +129,7 @@ var _ = Describe("Normalizer", func() {
 						IAAS:          "Azure",
 					}))
 					Expect(reports[1]).To(Equal(datamodels.Report{
+						ID:            usageReports[1].Hash(),
 						AccountNumber: "some-other-guid",
 						AccountName:   "some-other-name",
 						Day:           1,

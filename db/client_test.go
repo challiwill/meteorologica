@@ -47,6 +47,7 @@ var _ = Describe("Client", func() {
 			BeforeEach(func() {
 				reports = datamodels.Reports{
 					datamodels.Report{
+						ID:            "some-id",
 						AccountNumber: "12345",
 						AccountName:   "my-account",
 						Day:           17,
@@ -60,6 +61,7 @@ var _ = Describe("Client", func() {
 						IAAS:          "MySpecialIAAS",
 					},
 					datamodels.Report{
+						ID:            "some-other-id",
 						AccountNumber: "12345",
 						AccountName:   "my-account",
 						Day:           13,
@@ -82,34 +84,36 @@ var _ = Describe("Client", func() {
 				Expect(fakedb.ExecCallCount()).To(Equal(len(reports)))
 				query0, args0 := fakedb.ExecArgsForCall(0)
 				Expect(query0).To(ContainSubstring("INSERT INTO iaas_billing"))
-				Expect(query0).To(ContainSubstring("(AccountNumber, AccountName, Day, Month, Year, ServiceType, UsageQuantity, Cost, Region, UnitOfMeasure, IAAS)"))
-				Expect(query0).To(ContainSubstring("VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
-				Expect(args0[0]).To(Equal("12345"))
-				Expect(args0[1]).To(Equal("my-account"))
-				Expect(args0[2]).To(Equal(17))
-				Expect(args0[3]).To(Equal("March"))
-				Expect(args0[4]).To(Equal(1337))
-				Expect(args0[5]).To(Equal("some-service"))
-				Expect(args0[6]).To(Equal(0.65))
-				Expect(args0[7]).To(Equal(12.58))
-				Expect(args0[8]).To(Equal("some-region"))
-				Expect(args0[9]).To(Equal("GB"))
-				Expect(args0[10]).To(Equal("MySpecialIAAS"))
+				Expect(query0).To(ContainSubstring("(id, AccountNumber, AccountName, Day, Month, Year, ServiceType, UsageQuantity, Cost, Region, UnitOfMeasure, IAAS)"))
+				Expect(query0).To(ContainSubstring("VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+				Expect(args0[0]).To(Equal("some-id"))
+				Expect(args0[1]).To(Equal("12345"))
+				Expect(args0[2]).To(Equal("my-account"))
+				Expect(args0[3]).To(Equal(17))
+				Expect(args0[4]).To(Equal("March"))
+				Expect(args0[5]).To(Equal(1337))
+				Expect(args0[6]).To(Equal("some-service"))
+				Expect(args0[7]).To(Equal(0.65))
+				Expect(args0[8]).To(Equal(12.58))
+				Expect(args0[9]).To(Equal("some-region"))
+				Expect(args0[10]).To(Equal("GB"))
+				Expect(args0[11]).To(Equal("MySpecialIAAS"))
 				query1, args1 := fakedb.ExecArgsForCall(1)
 				Expect(query1).To(ContainSubstring("INSERT INTO iaas_billing"))
-				Expect(query1).To(ContainSubstring("(AccountNumber, AccountName, Day, Month, Year, ServiceType, UsageQuantity, Cost, Region, UnitOfMeasure, IAAS)"))
-				Expect(query1).To(ContainSubstring("VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
-				Expect(args1[0]).To(Equal("12345"))
-				Expect(args1[1]).To(Equal("my-account"))
-				Expect(args1[2]).To(Equal(13))
-				Expect(args1[3]).To(Equal("January"))
-				Expect(args1[4]).To(Equal(1905))
-				Expect(args1[5]).To(Equal("special-service"))
-				Expect(args1[6]).To(Equal(0.65))
-				Expect(args1[7]).To(Equal(12.58))
-				Expect(args1[8]).To(Equal(""))
-				Expect(args1[9]).To(Equal("GB"))
-				Expect(args1[10]).To(Equal("LessPreferredIAAS"))
+				Expect(query1).To(ContainSubstring("(id, AccountNumber, AccountName, Day, Month, Year, ServiceType, UsageQuantity, Cost, Region, UnitOfMeasure, IAAS)"))
+				Expect(query0).To(ContainSubstring("VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"))
+				Expect(args1[0]).To(Equal("some-other-id"))
+				Expect(args1[1]).To(Equal("12345"))
+				Expect(args1[2]).To(Equal("my-account"))
+				Expect(args1[3]).To(Equal(13))
+				Expect(args1[4]).To(Equal("January"))
+				Expect(args1[5]).To(Equal(1905))
+				Expect(args1[6]).To(Equal("special-service"))
+				Expect(args1[7]).To(Equal(0.65))
+				Expect(args1[8]).To(Equal(12.58))
+				Expect(args1[9]).To(Equal(""))
+				Expect(args1[10]).To(Equal("GB"))
+				Expect(args1[11]).To(Equal("LessPreferredIAAS"))
 			})
 		})
 

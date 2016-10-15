@@ -15,6 +15,8 @@ import (
 	"github.com/challiwill/meteorologica/errare"
 )
 
+var IAAS = "Azure"
+
 type Client struct {
 	URL        string
 	client     *http.Client
@@ -36,7 +38,7 @@ func NewClient(log *logrus.Logger, location *time.Location, serverURL, key strin
 }
 
 func (c Client) Name() string {
-	return "Azure"
+	return IAAS
 }
 
 func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
@@ -53,12 +55,12 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 
 	readerCleaner, err := csv.NewReaderCleaner(bytes.NewReader(azureMonthlyUsage), 31)
 	if err != nil {
-		return datamodels.Reports{}, csv.NewReadCleanError("Azure", err)
+		return datamodels.Reports{}, csv.NewReadCleanError(IAAS, err)
 	}
 	reports := []*Usage{}
 	err = csv.GenerateReports(readerCleaner, &reports)
 	if err != nil {
-		return datamodels.Reports{}, csv.NewReportParseError("Azure", err)
+		return datamodels.Reports{}, csv.NewReportParseError(IAAS, err)
 	}
 
 	normalizer := NewNormalizer(c.log, c.location)
@@ -83,10 +85,10 @@ func (c Client) GetBillingData() ([]byte, error) {
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, errare.NewRequestError(err, "Azure")
+		return nil, errare.NewRequestError(err, IAAS)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, errare.NewResponseError(resp.Status, "Azure")
+		return nil, errare.NewResponseError(resp.Status, IAAS)
 	}
 	defer resp.Body.Close()
 

@@ -1,5 +1,10 @@
 package azure
 
+import (
+	"hash/fnv"
+	"strconv"
+)
+
 type Usage struct {
 	AccountOwnerId         string  `csv:"AccountOwnerId"`
 	AccountName            string  `csv:"Account Name"`
@@ -32,4 +37,10 @@ type Usage struct {
 	CostCenter             string  `csv:"Cost Center"`
 	UnitOfMeasure          string  `csv:"Unit Of Measure"`
 	ResourceGroup          string  `csv:"Resource Group"`
+}
+
+func (u Usage) Hash() string {
+	h := fnv.New32a()
+	h.Write([]byte(u.SubscriptionGuid + strconv.Itoa(u.Year) + strconv.Itoa(u.Month) + strconv.Itoa(u.Day) + u.ConsumedService + u.MeterRegion + IAAS))
+	return strconv.FormatUint(uint64(h.Sum32()), 10)
 }

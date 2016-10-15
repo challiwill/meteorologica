@@ -22,6 +22,7 @@ var _ = Describe("Reports", func() {
 			BeforeEach(func() {
 				reports = Reports{
 					Report{
+						ID:            "a",
 						AccountNumber: "some-account",
 						AccountName:   "some-account-name",
 						Day:           1,
@@ -35,6 +36,7 @@ var _ = Describe("Reports", func() {
 						IAAS:          "my-iaas",
 					},
 					Report{
+						ID:            "b",
 						AccountNumber: "some-account",
 						AccountName:   "some-account-name",
 						Day:           2,
@@ -48,6 +50,7 @@ var _ = Describe("Reports", func() {
 						IAAS:          "my-iaas",
 					},
 					Report{
+						ID:            "c",
 						AccountNumber: "some-account",
 						AccountName:   "some-account-name",
 						Day:           1,
@@ -61,6 +64,7 @@ var _ = Describe("Reports", func() {
 						IAAS:          "my-iaas",
 					},
 					Report{
+						ID:            "a",
 						AccountNumber: "some-account",
 						AccountName:   "some-account-name",
 						Day:           1,
@@ -74,6 +78,7 @@ var _ = Describe("Reports", func() {
 						IAAS:          "my-iaas",
 					},
 					Report{
+						ID:            "d",
 						AccountNumber: "some-other-account",
 						AccountName:   "some-account-name",
 						Day:           1,
@@ -93,6 +98,7 @@ var _ = Describe("Reports", func() {
 				Expect(len(usageReports)).To(Equal(4))
 				Expect(usageReports).To(ContainElement(
 					Report{
+						ID:            "d",
 						AccountNumber: "some-other-account",
 						AccountName:   "some-account-name",
 						Day:           1,
@@ -108,6 +114,7 @@ var _ = Describe("Reports", func() {
 				))
 				Expect(usageReports).To(ContainElement(
 					Report{
+						ID:            "c",
 						AccountNumber: "some-account",
 						AccountName:   "some-account-name",
 						Day:           1,
@@ -123,6 +130,7 @@ var _ = Describe("Reports", func() {
 				))
 				Expect(usageReports).To(ContainElement(
 					Report{
+						ID:            "a",
 						AccountNumber: "some-account",
 						AccountName:   "some-account-name",
 						Day:           1,
@@ -138,6 +146,7 @@ var _ = Describe("Reports", func() {
 				))
 				Expect(usageReports).To(ContainElement(
 					Report{
+						ID:            "b",
 						AccountNumber: "some-account",
 						AccountName:   "some-account-name",
 						Day:           2,

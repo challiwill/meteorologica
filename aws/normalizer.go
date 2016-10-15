@@ -30,18 +30,11 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 		if isNotLineItem(usage) {
 			continue
 		}
-		accountName := usage.LinkedAccountName
-		if accountName == "" {
-			accountName = usage.PayerAccountName
-		}
-		accountID := usage.LinkedAccountId
-		if accountID == "" {
-			accountID = usage.PayerAccountId
-		}
 		t := time.Now().In(n.location)
 		reports = append(reports, datamodels.Report{
-			AccountNumber: accountID,
-			AccountName:   accountName,
+			ID:            usage.Hash(n.az),
+			AccountNumber: usage.LinkedAccountId,
+			AccountName:   usage.LinkedAccountName,
 			Day:           t.Day() - 1,
 			Month:         t.Month().String(),
 			Year:          t.Year(),

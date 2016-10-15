@@ -27,6 +27,7 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 	var reports datamodels.Reports
 	for _, usage := range usageReports {
 		reports = append(reports, datamodels.Report{
+			ID:            usage.Hash(),
 			AccountNumber: usage.SubscriptionGuid,
 			AccountName:   usage.SubscriptionName,
 			Day:           usage.Day,
@@ -37,7 +38,7 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 			Cost:          usage.ExtendedCost,
 			Region:        usage.MeterRegion,
 			UnitOfMeasure: usage.UnitOfMeasure,
-			IAAS:          "Azure",
+			IAAS:          IAAS,
 		})
 	}
 	return reports

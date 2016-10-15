@@ -1,5 +1,11 @@
 package aws
 
+import (
+	"hash/fnv"
+	"strconv"
+	"time"
+)
+
 type Usage struct {
 	InvoiceID              string  `csv:"InvoiceID"`
 	PayerAccountId         string  `csv:"PayerAccountId"`
@@ -30,4 +36,11 @@ type Usage struct {
 	TaxAmount              string  `csv:"TaxAmount"`
 	TaxType                string  `csv:"TaxType"`
 	TotalCost              float64 `csv:"TotalCost"`
+}
+
+func (u Usage) Hash(az string) string {
+	yr, mn, dy := time.Now().Date()
+	h := fnv.New32a()
+	h.Write([]byte(u.LinkedAccountId + strconv.Itoa(yr) + strconv.Itoa(int(mn)) + strconv.Itoa(dy) + u.ProductName + az + IAAS))
+	return strconv.FormatUint(uint64(h.Sum32()), 10)
 }
