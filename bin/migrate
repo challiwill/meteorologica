@@ -1,4 +1,4 @@
 #!/bin/bash
 
-cf push meteorologica -c 'meteorologica -migrate'
+CONFIGOR_ENV=local go run main.go -v -migrate
 
