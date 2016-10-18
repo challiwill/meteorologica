@@ -16,6 +16,7 @@ import (
 	"github.com/challiwill/meteorologica/aws"
 	"github.com/challiwill/meteorologica/azure"
 	"github.com/challiwill/meteorologica/db"
+	"github.com/challiwill/meteorologica/db/migrations"
 	"github.com/challiwill/meteorologica/gcp"
 	"github.com/challiwill/meteorologica/usagedatajob"
 	"github.com/heroku/rollrus"
@@ -105,10 +106,9 @@ func main() {
 	}
 
 	if migrate {
-		err := dbClient.Migrate()
+		err := migrations.LockDBAndMigrate(log, "mysql", Config.DB.Username+":"+Config.DB.Password+"@"+"tcp("+Config.DB.Address+")/"+Config.DB.Name)
 		if err != nil {
-			log.Error(err.Error())
-			log.Fatal("Failed to migrate database: ", err.Error())
+			log.Fatalf("database migration exited with error: %s", err.Error())
 		}
 		os.Exit(0)
 	}

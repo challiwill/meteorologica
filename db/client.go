@@ -2,7 +2,6 @@ package db
 
 import (
 	"database/sql"
-	"io/ioutil"
 
 	"github.com/Sirupsen/logrus"
 	_ "github.com/go-sql-driver/mysql"
@@ -138,41 +137,4 @@ func (c *Client) Ping() error {
 	defer c.Log.Debug("Returning db.Ping")
 
 	return c.Conn.Ping()
-}
-
-func (c *Client) Migrate() error {
-	c.Log.Debug("Entering db.Migrate")
-	defer c.Log.Debug("Returning db.Migrate")
-
-	migration, err := ioutil.ReadFile("migrations/iaas_billing.sql")
-	if err != nil {
-		return err
-	}
-
-	tx, err := c.Conn.Begin()
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec(string(migration))
-	if err != nil {
-		c.Log.Warn("Migration failed, rolling back...")
-		er := tx.Rollback()
-		if er != nil {
-			c.Log.Warn("Rollback failed: ", err.Error())
-		}
-		return err
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		c.Log.Warn("Migration failed, rolling back...")
-		err := tx.Rollback()
-		if err != nil {
-			c.Log.Warn("Rollback failed: ", err.Error())
-		}
-		return err
-	}
-
-	return nil
 }

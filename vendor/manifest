@@ -20,6 +20,14 @@
 			"notests": true
 		},
 		{
+			"importpath": "github.com/BurntSushi/migration",
+			"repository": "https://github.com/BurntSushi/migration",
+			"vcs": "git",
+			"revision": "c45b897f13350786ccaf2b7403b92b1c7ad85844",
+			"branch": "master",
+			"notests": true
+		},
+		{
 			"importpath": "github.com/BurntSushi/toml",
 			"repository": "https://github.com/BurntSushi/toml",
 			"vcs": "git",
