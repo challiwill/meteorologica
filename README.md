@@ -120,32 +120,10 @@ db:
   address: hostname:port
   name: database-name
 ```
-
-The expected schema is (`VARCHAR` and `CHAR` should be adjusted as necessary):
-``` sql
-CREATE TABLE database-name.iaas_billing (
-  AccountNumber VARCHAR(15),
-  AccountName VARCHAR(30),
-  Day TINYINT(2),
-  Month CHAR(9),
-  Year SMALLINT(4),
-  ServiceType VARCHAR(30),
-  UsageQuantity DOUBLE,
-  Cost DECIMAL(15,2),
-  Region VARCHAR(10),
-  UnitOfMeasure VARCHAR(10),
-  IAAS VARCHAR(10),
-  UNIQUE KEY(AccountNumber, Day, Month, Year, ServiceType, UsageQuantity, Region, IAAS)
-);
-```
+The expected schema can be found from the `db/migrations/` directory.
 
 ## Migrations
-The current way to run migrations is rather janky. Create a file `migrations/iaas_billing.sql` and then push the app with the `-migrate` flag set:
-```
-cf push meteorologica -c "meteorologica -migrate"
-```
-After this push the app again or restage as appropriate.
-Someday this will be made better.
+Migrations can be run by providing the `-migrate` flag. Migrations are run from the `db/migrations/migrations.go` file as defined in the same directory.
 
 ## Timeline
 I am keeping a running list of tasks to accomplish in the [TODO](TODO.md) file.

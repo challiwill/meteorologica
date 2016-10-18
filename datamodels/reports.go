@@ -1,42 +1,44 @@
 package datamodels
 
+import "time"
+
 type ReportIdentifier struct {
 	AccountNumber string
 	AccountName   string
 	ServiceType   string
 	Day           int
-	Month         string
+	Month         time.Month
 	Year          int
-	IAAS          string
+	Resource      string
 	Region        string
 }
 
 type UsageMonthToDate struct {
 	AccountNumber string
 	AccountName   string
-	Month         string
+	Month         time.Month
 	Year          int
 	ServiceType   string
 	UsageQuantity float64
 	Cost          float64
 	Region        string
 	UnitOfMeasure string
-	IAAS          string
+	Resource      string
 }
 
 type Report struct {
-	ID            string  `csv:"ID"`
-	AccountNumber string  `csv:"Account Number"`
-	AccountName   string  `csv:"Account Name"`
-	Day           int     `csv:"Day"`
-	Month         string  `csv:"Month"`
-	Year          int     `csv:"Year"`
-	ServiceType   string  `csv:"Service Type"`
-	UsageQuantity float64 `csv:"UsageQuantity"`
-	Cost          float64 `csv:"Cost"`
-	Region        string  `csv:"Region"`
-	UnitOfMeasure string  `csv:"Unit Of Measurement"`
-	IAAS          string  `csv:"IAAS"`
+	ID            string     `csv:"ID"`
+	AccountNumber string     `csv:"Account Number"`
+	AccountName   string     `csv:"Account Name"`
+	Day           int        `csv:"Day"`
+	Month         time.Month `csv:"Month"`
+	Year          int        `csv:"Year"`
+	ServiceType   string     `csv:"Service Type"`
+	Region        string     `csv:"Region"`
+	Resource      string     `csv:"Resource"`
+	UsageQuantity float64    `csv:"Usage Quantity"`
+	UnitOfMeasure string     `csv:"Unit Of Measurement"`
+	Cost          float64    `csv:"Cost"`
 }
 
 type Reports []Report

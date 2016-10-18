@@ -119,28 +119,28 @@ var _ = Describe("Normalizer", func() {
 						AccountNumber: "some-guid",
 						AccountName:   "some-name",
 						Day:           1,
-						Month:         "October",
+						Month:         time.Month(10),
 						Year:          2016,
 						ServiceType:   "some-service-type",
 						UsageQuantity: 24.00,
 						Cost:          0.02,
 						Region:        "some-region",
 						UnitOfMeasure: "Hours",
-						IAAS:          "Azure",
+						Resource:      "Azure",
 					}))
 					Expect(reports[1]).To(Equal(datamodels.Report{
 						ID:            usageReports[1].Hash(),
 						AccountNumber: "some-other-guid",
 						AccountName:   "some-other-name",
 						Day:           1,
-						Month:         "October",
+						Month:         time.Month(10),
 						Year:          2016,
 						ServiceType:   "some-other-service-type",
 						UsageQuantity: 22.00,
 						Cost:          4.02,
 						Region:        "some-other-region",
 						UnitOfMeasure: "Hours",
-						IAAS:          "Azure",
+						Resource:      "Azure",
 					}))
 				})
 			})

@@ -36,14 +36,14 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 			AccountNumber: usage.LinkedAccountId,
 			AccountName:   usage.LinkedAccountName,
 			Day:           t.Day() - 1,
-			Month:         t.Month().String(),
+			Month:         t.Month(),
 			Year:          t.Year(),
 			ServiceType:   usage.ProductName,
 			UsageQuantity: usage.UsageQuantity,
 			Cost:          usage.TotalCost,
 			Region:        n.az,
 			UnitOfMeasure: "",
-			IAAS:          IAAS,
+			Resource:      IAAS,
 		})
 	}
 	return reports

@@ -84,14 +84,14 @@ var _ = Describe("Normalizer", func() {
 						AccountNumber: "some-linked-account-id",
 						AccountName:   "some-linked-account-name",
 						Day:           time.Now().Day() - 1,
-						Month:         time.Now().Month().String(),
+						Month:         time.Now().Month(),
 						Year:          time.Now().Year(),
 						ServiceType:   "some-product-name",
 						UsageQuantity: 0.51,
 						Cost:          1.20,
 						Region:        "my-region",
 						UnitOfMeasure: "",
-						IAAS:          "AWS",
+						Resource:      "AWS",
 					}))
 				})
 			})

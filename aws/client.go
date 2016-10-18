@@ -116,7 +116,7 @@ func (c Client) CalculateDailyUsages(reports datamodels.Reports) (datamodels.Rep
 			Day:           report.Day,
 			Month:         report.Month,
 			Year:          report.Year,
-			IAAS:          report.IAAS,
+			Resource:      report.Resource,
 			Region:        report.Region,
 		})
 		if err != nil {

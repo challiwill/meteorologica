@@ -59,11 +59,11 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 			c.Log.Debugf("Saving report to database %d of %d...", i, len(reports))
 		}
 		_, err := c.Conn.Exec(`
-		INSERT INTO iaas_billing
-		(id, AccountNumber, AccountName, Day, Month, Year, ServiceType, UsageQuantity, Cost, Region, UnitOfMeasure, IAAS)
+		INSERT INTO resource_billing
+		(id, account_number, account_name, day, month, year, service_type, region, resource, usage_quantity, unit_of_measure, cost)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE UsageQuantity=VALUES(UsageQuantity), Cost=VALUES(Cost)
-		`, r.ID, r.AccountNumber, r.AccountName, r.Day, r.Month, r.Year, r.ServiceType, r.UsageQuantity, r.Cost, r.Region, r.UnitOfMeasure, r.IAAS)
+		ON DUPLICATE KEY UPDATE usage_quantity=VALUES(usage_quantity), cost=VALUES(cost)
+		`, r.ID, r.AccountNumber, r.AccountName, r.Day, r.Month, r.Year, r.ServiceType, r.Region, r.Resource, r.UsageQuantity, r.UnitOfMeasure, r.Cost)
 		if err != nil {
 			c.Log.Warn("Failed to save report to database: ", err.Error())
 			multiErr.errs = append(multiErr.errs, err)
@@ -88,15 +88,15 @@ func (c *Client) GetUsageMonthToDate(id datamodels.ReportIdentifier) (datamodels
 
 	usageToDate := datamodels.UsageMonthToDate{}
 	err := c.Conn.QueryRow(`
-		SELECT AccountNumber, AccountName, Month, Year, ServiceType, SUM(UsageQuantity), SUM(Cost), Region, UnitOfMeasure, IAAS
-		FROM iaas_billing
-		WHERE AccountName=?
-		AND Month=?
-		AND Year=?
-		AND ServiceType=?
-		AND Region=?
-		AND IAAS=?`,
-		id.AccountName, id.Month, id.Year, id.ServiceType, id.Region, id.IAAS).Scan(
+		SELECT account_number, account_name, month, year, service_type, SUM(usage_quantity), SUM(cost), region, unit_of_measure, resource
+		FROM resource_billing
+		WHERE account_number=?
+		AND month=?
+		AND year=?
+		AND service_type=?
+		AND region=?
+		AND resource=?`,
+		id.AccountNumber, id.Month, id.Year, id.ServiceType, id.Region, id.Resource).Scan(
 		&usageToDate.AccountNumber,
 		&accountName,
 		&usageToDate.Month,
@@ -106,7 +106,7 @@ func (c *Client) GetUsageMonthToDate(id datamodels.ReportIdentifier) (datamodels
 		&usageToDate.Cost,
 		&region,
 		&unitOfMeasure,
-		&usageToDate.IAAS,
+		&usageToDate.Resource,
 	)
 	if err == sql.ErrNoRows {
 		return datamodels.UsageMonthToDate{}, nil
