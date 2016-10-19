@@ -26,3 +26,6 @@ PERFORMANCE
 OTHER SERVICES
 * configurable frontend as a micro service
 * usage alerting service
+
+HASH
+* how can we make the best bet that hash won't collide with previous months data (probably most significant collision that would cause the hardest to track down bug)
