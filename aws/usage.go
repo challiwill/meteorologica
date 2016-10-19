@@ -40,7 +40,7 @@ type Usage struct {
 
 func (u Usage) Hash(az string) string {
 	yr, mn, dy := time.Now().Date()
-	h := fnv.New32a()
+	h := fnv.New64a()
 	h.Write([]byte(u.LinkedAccountId + strconv.Itoa(yr) + strconv.Itoa(int(mn)) + strconv.Itoa(dy) + u.ProductName + az + IAAS))
-	return strconv.FormatUint(uint64(h.Sum32()), 10)
+	return strconv.FormatUint(uint64(h.Sum64()), 10)
 }

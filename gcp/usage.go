@@ -27,7 +27,7 @@ type Usage struct {
 }
 
 func (u Usage) Hash() string {
-	h := fnv.New32a()
+	h := fnv.New64a()
 	h.Write([]byte(u.ProjectNumber + u.StartTime + u.Description + IAAS))
-	return strconv.FormatUint(uint64(h.Sum32()), 10)
+	return strconv.FormatUint(uint64(h.Sum64()), 10)
 }
