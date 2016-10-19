@@ -30,34 +30,28 @@ type UsageDataJob struct {
 
 	IAASClients []IaasClient
 
-	saveFile     bool
-	saveToBucket bool
-	saveToDB     bool
-	BucketClient BucketClient
-	DBClient     DBClient
+	saveFile bool
+	saveToDB bool
+	DBClient DBClient
 }
 
 func NewJob(
 	log *logrus.Logger,
 	location *time.Location,
 	iaasClients []IaasClient,
-	bucketClient BucketClient,
 	dbClient DBClient,
 	saveFile bool,
-	saveToBucket bool,
 	saveToDB bool,
 ) *UsageDataJob {
 	return &UsageDataJob{
 		log:      log,
 		location: location,
 
-		IAASClients:  iaasClients,
-		BucketClient: bucketClient,
-		DBClient:     dbClient,
+		IAASClients: iaasClients,
+		DBClient:    dbClient,
 
-		saveFile:     saveFile,
-		saveToBucket: saveToBucket,
-		saveToDB:     saveToDB,
+		saveFile: saveFile,
+		saveToDB: saveToDB,
 	}
 }
 
@@ -95,7 +89,7 @@ func (j *UsageDataJob) Run() {
 			}
 		}
 
-		if j.saveFile || j.saveToBucket { // Append to file
+		if j.saveFile { // Append to file
 			j.log.Debugf("Writing %s data to file...", iaasClient.Name())
 			if i == 0 {
 				err = gocsv.MarshalFile(&normalizedData, normalizedFile)
@@ -110,20 +104,11 @@ func (j *UsageDataJob) Run() {
 		}
 	}
 
-	if j.saveToBucket { // Send file to bucket
-		j.log.Debugf("Saving data file to GCP bucket...")
-		err = j.BucketClient.PublishFileToBucket(normalizedFileName)
+	if !j.saveFile {
+		err = os.Remove(normalizedFileName)
 		if err != nil {
-			j.log.Error("Failed to publish data to storage bucket:", err)
-		} else {
-			if !j.saveFile {
-				err = os.Remove(normalizedFileName) // only remove if succeeded to parse
-				if err != nil {
-					j.log.Warn("Failed to remove file:", normalizedFile)
-				}
-			}
+			j.log.Warn("Failed to remove file:", normalizedFile)
 		}
-		j.log.Debugf("Saved data file to GCP bucket")
 	}
 
 	finishedTime := time.Now().In(j.location)

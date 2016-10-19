@@ -28,8 +28,7 @@ import (
 type Client interface{}
 
 var Config = struct {
-	Port              int    `default:"8080"`
-	StorageBucketName string `yaml:"storage-bucket-name" env:"M_STORAGE_BUCKET_NAME"`
+	Port int `default:"8080"`
 
 	Azure struct {
 		AccessKey        string `yaml:"access-key" env:"M_AZURE_ACCESS_KEY"`
@@ -65,11 +64,8 @@ var (
 	resourcesFlag = flag.String("resources", "aws,gcp,azure", "A comma seperated list of resource to retrieve billing information from. If none are specified the default is AWS, GCP, and Azure")
 	nowFlag       = flag.Bool("now", false, "Run job now (instead of waiting for cron job to kick off at midnight)")
 	verboseFlag   = flag.Bool("v", false, "Log at Debug level")
-	fileFlag      = flag.Bool("file", false, "Keep the generated, normalized CSV file locally")
-	localOnlyFlag = flag.Bool("local", false, "Do not connect to any services (overrides -db and -bucket)")
-	dbFlag        = flag.Bool("db", false, "Save the data to the database")
-	bucketFlag    = flag.Bool("bucket", false, "Save the data as a .csv to the provided GCP bucket")
-	migrateFlag   = flag.Bool("migrate", false, "Run migrations then exit")
+	fileFlag      = flag.Bool("file", false, "Save a local copy of the data as a normalized CSV file")
+	dbFlag        = flag.Bool("db", true, "Save the data to the database")
 )
 
 func main() {
@@ -79,7 +75,7 @@ func main() {
 		logrus.Fatalf("Failed to load configuration: %s", err.Error())
 	}
 	flag.Parse()
-	keepFile, saveToDB, saveToBucket, migrate, resources := parseFlags()
+	keepFile, saveToDB, resources := parseFlags()
 	log := configureLog()
 
 	sfTime, err := time.LoadLocation("America/Los_Angeles")
@@ -92,7 +88,7 @@ func main() {
 
 	// DB Client
 	var dbClient *db.Client
-	if saveToDB || migrate {
+	if saveToDB {
 		log.Debug("Migrating DB and Creating DB Client")
 		dbClient, err = migrations.LockDBAndMigrate(log, "mysql", Config.DB.Username, Config.DB.Password, Config.DB.Address, Config.DB.Name)
 		if err != nil {
@@ -101,7 +97,6 @@ func main() {
 	}
 
 	var iaasClients []usagedatajob.IaasClient
-	var bucketClient usagedatajob.BucketClient
 
 	// Azure Client
 	if caseInsensitiveContains(resources, "Azure") {
@@ -128,26 +123,6 @@ func main() {
 			log.Fatal("Failed to create GCP client: ", err.Error())
 		}
 		iaasClients = append(iaasClients, gcpClient)
-	}
-
-	// BucketClient
-	if saveToBucket {
-		log.Debug("Creating Bucket Client (GCP)")
-		if Config.GCP.ApplicationCredentialsPath == "" {
-			log.Fatal("To store the file Meteorologica requires application-credentials-path to be configured")
-		}
-		if Config.StorageBucketName == "" {
-			log.Fatal("To store the file Meteorologica requires storage-bucket-name to be configured")
-		}
-		gcpCredentials, err := ioutil.ReadFile(Config.GCP.ApplicationCredentialsPath)
-		if err != nil {
-			log.Fatal("Failed to create Bucket (GCP) credentials: ", err.Error())
-		}
-		gcpClient, err := gcp.NewClient(log, sfTime, gcpCredentials, Config.StorageBucketName)
-		if err != nil {
-			log.Fatal("Failed to create Bucket (GCP) client: ", err.Error())
-		}
-		bucketClient = gcpClient
 	}
 
 	// AWS Client
@@ -177,7 +152,7 @@ func main() {
 		iaasClients = append(iaasClients, awsClient)
 	}
 
-	usageDataJob := usagedatajob.NewJob(log, sfTime, iaasClients, bucketClient, dbClient, keepFile, saveToBucket, saveToDB)
+	usageDataJob := usagedatajob.NewJob(log, sfTime, iaasClients, dbClient, keepFile, saveToDB)
 
 	// BILLING DATA
 	if *nowFlag {
@@ -207,17 +182,9 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(Config.Port), nil))
 }
 
-func parseFlags() (bool, bool, bool, bool, []string) {
-	localOnly := *localOnlyFlag
-	dbf := *dbFlag
-	bkf := *bucketFlag
-
-	keepFile := *fileFlag
-	saveToDB := (dbf || (!dbf && !bkf)) && !localOnly
-	saveToBucket := (bkf || (!dbf && !bkf)) && !localOnly
+func parseFlags() (bool, bool, []string) {
 	resources := strings.Split(*resourcesFlag, ",")
-	migrate := *migrateFlag
-	return keepFile, saveToDB, saveToBucket, migrate, resources
+	return *fileFlag, *dbFlag, resources
 }
 
 func configureLog() *logrus.Logger {

@@ -6,8 +6,6 @@ Currently the default behavior is as follows:
 * Meteorologica collects billing information from the location where it is published (AWS bucket, GCP bucket, Azure API)
 * Meteorologica normalizes the data
 * Meteorologica inserts the data into the given MySQL database (right now this step can take a long time because it goes row by row)
-* Metorologica saves the data to a local file `YEAR-MONTH-normalized-billing-data.csv` (eg `2016-September-normalized-billing-data.csv`)
-* Meteorologica uploads this file to the specified bucket (currently a GCP bucket only)
 
 *NB: Currently if a insert is made and there is a collision (same hash) the usage and cost will be updated to the new values*
 
@@ -17,14 +15,14 @@ You can use this tool to collect billing info from all your IAAS's just by runni
 go run main.go
 ```
 
-The app is configured to collect, standardize, and upload a consolidated csv data file at midnight PST each day.
+The app is configured to collect, standardize, and save consolidated data at midnight PST each day.
 If you would like it to run immediately pass it the `-now` flag, for example:
 ```
 go run main.go -now
 ```
 
-By default the app is configured to send the standardized file to the given GCP bucket.
-To keep the file locally and not delete it after processing pass in the `-file` flag:
+By default the app is configured to save the data to the configured database.
+To keep a local version of the data as a CSV file pass in the `-file` flag:
 ```
 go run main.go -file
 ```
@@ -37,15 +35,11 @@ go run main.go -aws -gcp
 
 All flags:
 ```
--azure    Retrive Azure data
--aws      Retrieve AWS data
--gcp      Retrieve GCP data
--v        Verbose mode, log at the debug level
--file     Save the generated and normalized data in a local .csv file
--local    Do not connect to any services, specifically do not send the data to the database or the GCP bucket (this overrides '-db' and '-bucket')
--db       Save the data to the database (by default this happens, you would only set this flag to send the data to the database and not the GCP bucket)
--bucket   Save the data to the GCP bucket (by default this happens, you would only set this flag to send the data to the GCP bucket and not the database)
--now      Run the task now instead of waiting for next scheduled job (next midnight)
+-resources  A comma seperated list of resource to retrieve billing information from. If none are specified the default is AWS, GCP, and Azure
+-v          Verbose mode, log at the debug level
+-file       Save the generated and normalized data in a local .csv file
+-db         Save the data to the database (by default this happens, this flag exists so you can set it to false)
+-now        Run the task now instead of waiting for next scheduled job (next midnight)
 ```
 
 ## Deployment
@@ -112,7 +106,7 @@ azure:
 ```
 
 ### MySQL Database:
-If you would like to connect to a MySQL database the following variables must be set as needed:
+You need to provide credentials for your MySQL database:
 ``` yml
 db:
   username: account-username
@@ -123,7 +117,10 @@ db:
 The expected schema can be found from the `db/migrations/` directory.
 
 ## Migrations
-Migrations can be run by providing the `-migrate` flag. Migrations are run from the `db/migrations/migrations.go` file as defined in the same directory.
+Migrations are run when the app starts up.
+The app protects against conflicting migrations by getting a database lock.
+All other app instances will wait for the lock then exit the migrations with a no-op.
+Migrations are run from the `db/migrations/migrations.go` file as defined in the same directory.
 
 ## Timeline
 I am keeping a running list of tasks to accomplish in the [TODO](TODO.md) file.
