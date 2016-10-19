@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -61,9 +62,7 @@ var Config = struct {
 }{}
 
 var (
-	azureFlag     = flag.Bool("azure", false, "Only retrieve Azure data (by default Azure, AWS, and GCP data is retrieved)")
-	gcpFlag       = flag.Bool("gcp", false, "Only retrieve GCP data (by default Azure, AWS, and GCP data is retrieved)")
-	awsFlag       = flag.Bool("aws", false, "Only retrieve AWS data (by default Azure, AWS, and GCP data is retrieved)")
+	resourcesFlag = flag.String("resources", "", "A comma seperated list of resource to retrieve billing information from. If none are specified the default is AWS, GCP, and Azure")
 	nowFlag       = flag.Bool("now", false, "Run job now (instead of waiting for cron job to kick off at midnight)")
 	verboseFlag   = flag.Bool("v", false, "Log at Debug level")
 	fileFlag      = flag.Bool("file", false, "Keep the generated, normalized CSV file locally")
@@ -80,7 +79,7 @@ func main() {
 		logrus.Fatalf("Failed to load configuration: %s", err.Error())
 	}
 	flag.Parse()
-	keepFile, saveToDB, saveToBucket, getAzure, getGCP, getAWS, migrate := parseFlags()
+	keepFile, saveToDB, saveToBucket, migrate, resources := parseFlags()
 	log := configureLog()
 
 	sfTime, err := time.LoadLocation("America/Los_Angeles")
@@ -105,7 +104,7 @@ func main() {
 	var bucketClient usagedatajob.BucketClient
 
 	// Azure Client
-	if getAzure {
+	if caseInsensitiveContains(resources, "Azure") {
 		log.Debug("Creating Azure Client")
 		if Config.Azure.AccessKey == "" || Config.Azure.EnrollmentNumber == 0 {
 			log.Fatal("Azure requires access-key and enrollment-number to be configured")
@@ -115,7 +114,7 @@ func main() {
 	}
 
 	// GCP Client
-	if getGCP {
+	if caseInsensitiveContains(resources, "GCP") {
 		log.Debug("Creating GCP Client")
 		if Config.GCP.ApplicationCredentialsPath == "" || Config.GCP.BucketName == "" {
 			log.Fatal("GCP requires bucket-name and application-credentials-path to be configured")
@@ -152,7 +151,7 @@ func main() {
 	}
 
 	// AWS Client
-	if getAWS {
+	if caseInsensitiveContains(resources, "AWS") {
 		log.Debug("Creating AWS Client")
 		if Config.AWS.Region == "" {
 			log.Fatal("AWS requires region to be configured")
@@ -208,8 +207,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(Config.Port), nil))
 }
 
-func parseFlags() (bool, bool, bool, bool, bool, bool, bool) {
-	getAll := !(*azureFlag) && !(*gcpFlag) && !(*awsFlag)
+func parseFlags() (bool, bool, bool, bool, []string) {
 	localOnly := *localOnlyFlag
 	dbf := *dbFlag
 	bkf := *bucketFlag
@@ -217,11 +215,9 @@ func parseFlags() (bool, bool, bool, bool, bool, bool, bool) {
 	keepFile := *fileFlag
 	saveToDB := (dbf || (!dbf && !bkf)) && !localOnly
 	saveToBucket := (bkf || (!dbf && !bkf)) && !localOnly
-	getAzure := *azureFlag || getAll
-	getGCP := *gcpFlag || getAll
-	getAWS := *awsFlag || getAll
+	resources := strings.Split(*resourcesFlag, ",")
 	migrate := *migrateFlag
-	return keepFile, saveToDB, saveToBucket, getAzure, getGCP, getAWS, migrate
+	return keepFile, saveToDB, saveToBucket, migrate, resources
 }
 
 func configureLog() *logrus.Logger {
@@ -237,4 +233,13 @@ func configureLog() *logrus.Logger {
 		log.Hooks.Add(rollrus.NewHook(Config.Rollbar.Token, env))
 	}
 	return log
+}
+
+func caseInsensitiveContains(haystack []string, needle string) bool {
+	for _, hay := range haystack {
+		if strings.ToLower(hay) == strings.ToLower(needle) {
+			return true
+		}
+	}
+	return false
 }

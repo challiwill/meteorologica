@@ -17,7 +17,6 @@ FEATURES
 * extract each IAAS as a resource or something so that new resources can be added to calculate billing info from (eg Pagerduty)
 * remove save to bucket feature?
 * default behavior should be 'run now'
-* have some sort of generic flag to specify only run for 1 resource type instead of individual flags for aws/gcp/azure
 
 PERFORMANCE
 * can use streams of reading from csv and writing to database to do it all concurrently instead of in blocks
