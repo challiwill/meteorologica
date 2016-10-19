@@ -1,7 +1,7 @@
 ---
 applications:
   - name: meteorologica
-    command: meteorologica
+    command: meteorologica -cron -file
     env:
       GOVERSION: go1.7
       GOPACKAGENAME: github.com/challiwill/meteorologica

@@ -62,7 +62,7 @@ var Config = struct {
 
 var (
 	resourcesFlag = flag.String("resources", "aws,gcp,azure", "A comma seperated list of resource to retrieve billing information from. If none are specified the default is AWS, GCP, and Azure")
-	nowFlag       = flag.Bool("now", false, "Run job now (instead of waiting for cron job to kick off at midnight)")
+	cronFlag      = flag.Bool("cron", false, "Run job periodically every day at midnight")
 	verboseFlag   = flag.Bool("v", false, "Log at Debug level")
 	fileFlag      = flag.Bool("file", false, "Save a local copy of the data as a normalized CSV file")
 	dbFlag        = flag.Bool("db", true, "Save the data to the database")
@@ -154,21 +154,21 @@ func main() {
 
 	usageDataJob := usagedatajob.NewJob(log, sfTime, iaasClients, dbClient, keepFile, saveToDB)
 
-	// BILLING DATA
-	if *nowFlag {
+	c := cron.NewWithLocation(sfTime)
+	err = c.AddJob("@midnight", usageDataJob)
+	if err != nil {
+		log.Fatal("Could not create cron job: ", err.Error())
+	}
+
+	if *cronFlag {
+		c.Start()
+	} else {
 		usageDataJob.Run()
 		if dbClient != nil {
 			_ = dbClient.Close()
 		}
 		os.Exit(0)
 	}
-
-	c := cron.NewWithLocation(sfTime)
-	err = c.AddJob("@midnight", usageDataJob)
-	if err != nil {
-		log.Fatal("Could not create cron job: ", err.Error())
-	}
-	c.Start()
 
 	// HEALTHCHECK
 	http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {

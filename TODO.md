@@ -14,7 +14,6 @@ CONFIGURATION
 
 FEATURES
 * extract each IAAS as a resource or something so that new resources can be added to calculate billing info from (eg Pagerduty)
-* default behavior should be 'run now'
 
 PERFORMANCE
 * can use streams of reading from csv and writing to database to do it all concurrently instead of in blocks

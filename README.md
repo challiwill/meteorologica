@@ -15,12 +15,6 @@ You can use this tool to collect billing info from all your IAAS's just by runni
 go run main.go
 ```
 
-The app is configured to collect, standardize, and save consolidated data at midnight PST each day.
-If you would like it to run immediately pass it the `-now` flag, for example:
-```
-go run main.go -now
-```
-
 By default the app is configured to save the data to the configured database.
 To keep a local version of the data as a CSV file pass in the `-file` flag:
 ```
@@ -39,7 +33,7 @@ All flags:
 -v          Verbose mode, log at the debug level
 -file       Save the generated and normalized data in a local .csv file
 -db         Save the data to the database (by default this happens, this flag exists so you can set it to false)
--now        Run the task now instead of waiting for next scheduled job (next midnight)
+-cron       Run job periodically every day at midnight
 ```
 
 ## Deployment
