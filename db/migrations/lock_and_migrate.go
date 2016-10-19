@@ -6,19 +6,26 @@ import (
 
 	"github.com/BurntSushi/migration"
 	"github.com/Sirupsen/logrus"
+	"github.com/challiwill/meteorologica/db"
+	"github.com/challiwill/meteorologica/errare"
 )
 
-func LockDBAndMigrate(log *logrus.Logger, sqlDriver string, sqlDataSource string) error {
+func LockDBAndMigrate(log *logrus.Logger, sqlDriver, username, password, address, name string) (*db.Client, error) {
 	log.Debug("Entering db.Ping")
 	defer log.Debug("Returning db.Ping")
 
+	if username == "" && password != "" {
+		return nil, errare.NewCreationError("database client", "cannot have a database password with a username\n Please set the DB_PASSWORD environment variable")
+	}
+
+	sqlDataSource := username + ":" + password + "@" + "tcp(" + address + ")/" + name
+	lockName := "meteorologica-mysql-migration-lock"
+
 	dbLockConn, err := sql.Open(sqlDriver, sqlDataSource)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer dbLockConn.Close()
-
-	lockName := "meteorologica-mysql-migration-lock"
 
 	for {
 		var res int
@@ -42,15 +49,13 @@ func LockDBAndMigrate(log *logrus.Logger, sqlDriver string, sqlDataSource string
 		}()
 		log.Info("migration lock acquired")
 
-		_, err = migration.OpenWith(sqlDriver, sqlDataSource, Migrations, mariadbGetVersion, mariadbSetVersion)
+		dbClient, err := migration.OpenWith(sqlDriver, sqlDataSource, Migrations, mariadbGetVersion, mariadbSetVersion)
 		if err != nil {
 			log.Fatal("failed to run migrations: ", err)
 		}
 
-		break
+		return db.NewClientWith(log, dbClient), nil
 	}
-
-	return nil
 }
 
 func mariadbGetVersion(tx migration.LimitedTx) (int, error) {

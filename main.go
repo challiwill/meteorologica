@@ -94,23 +94,11 @@ func main() {
 	// DB Client
 	var dbClient *db.Client
 	if saveToDB || migrate {
-		log.Debug("Creating DB Client")
-		dbClient, err = db.NewClient(log, Config.DB.Username, Config.DB.Password, Config.DB.Address, Config.DB.Name)
-		if err != nil {
-			log.Fatal("Failed to create database client: ", err.Error())
-		}
-		err = dbClient.Ping()
-		if err != nil {
-			log.Fatal("Failed to create database connection: ", err.Error())
-		}
-	}
-
-	if migrate {
-		err := migrations.LockDBAndMigrate(log, "mysql", Config.DB.Username+":"+Config.DB.Password+"@"+"tcp("+Config.DB.Address+")/"+Config.DB.Name)
+		log.Debug("Migrating DB and Creating DB Client")
+		dbClient, err = migrations.LockDBAndMigrate(log, "mysql", Config.DB.Username, Config.DB.Password, Config.DB.Address, Config.DB.Name)
 		if err != nil {
 			log.Fatalf("database migration exited with error: %s", err.Error())
 		}
-		os.Exit(0)
 	}
 
 	var iaasClients []usagedatajob.IaasClient

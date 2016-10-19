@@ -4,7 +4,6 @@ CODE CLIMATE
 
 DATABASE
 * set up local db for testing
-* use database connection from migrations
 * explore best types for database
 * rename lock to be more robust
 

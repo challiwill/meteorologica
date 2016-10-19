@@ -41,6 +41,13 @@ func NewClient(log *logrus.Logger, username, password, address, name string) (*C
 	}, nil
 }
 
+func NewClientWith(log *logrus.Logger, conn DB) *Client {
+	return &Client{
+		Log:  log,
+		Conn: conn,
+	}
+}
+
 type MultiErr struct {
 	errs []error
 }
