@@ -98,7 +98,7 @@ func (j *UsageDataJob) Run() {
 		if j.saveFile || j.saveToBucket { // Append to file
 			j.log.Debugf("Writing %s data to file...", iaasClient.Name())
 			if i == 0 {
-				err = gocsv.Marshal(&normalizedData, normalizedFile)
+				err = gocsv.MarshalFile(&normalizedData, normalizedFile)
 			} else {
 				err = gocsv.MarshalWithoutHeaders(&normalizedData, normalizedFile)
 			}
