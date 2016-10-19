@@ -62,7 +62,7 @@ var Config = struct {
 }{}
 
 var (
-	resourcesFlag = flag.String("resources", "", "A comma seperated list of resource to retrieve billing information from. If none are specified the default is AWS, GCP, and Azure")
+	resourcesFlag = flag.String("resources", "aws,gcp,azure", "A comma seperated list of resource to retrieve billing information from. If none are specified the default is AWS, GCP, and Azure")
 	nowFlag       = flag.Bool("now", false, "Run job now (instead of waiting for cron job to kick off at midnight)")
 	verboseFlag   = flag.Bool("v", false, "Log at Debug level")
 	fileFlag      = flag.Bool("file", false, "Keep the generated, normalized CSV file locally")
