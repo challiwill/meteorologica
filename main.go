@@ -74,7 +74,7 @@ var (
 )
 
 func main() {
-	os.Setenv("CONFIGOR_ENV_PREFIX", "M")
+	_ = os.Setenv("CONFIGOR_ENV_PREFIX", "M")
 	err := configor.Load(&Config, "configuration/meteorologica.yml")
 	if err != nil {
 		logrus.Fatalf("Failed to load configuration: %s", err.Error())
@@ -175,8 +175,8 @@ func main() {
 		if Config.AWS.MasterAccountNumber == int64(0) {
 			log.Fatal("AWS requires master_account_number to be configured")
 		}
-		os.Setenv("AWS_ACCESS_KEY_ID", Config.AWS.AccessKeyID)
-		os.Setenv("AWS_SECRET_ACCESS_KEY", Config.AWS.SecretAccessKey)
+		_ = os.Setenv("AWS_ACCESS_KEY_ID", Config.AWS.AccessKeyID)
+		_ = os.Setenv("AWS_SECRET_ACCESS_KEY", Config.AWS.SecretAccessKey)
 		sess, err := session.NewSession(&awssdk.Config{Region: awssdk.String(Config.AWS.Region)})
 		if err != nil {
 			log.Fatal("Failed to create AWS credentials: ", err.Error())
@@ -196,7 +196,7 @@ func main() {
 	if *nowFlag {
 		usageDataJob.Run()
 		if dbClient != nil {
-			dbClient.Close()
+			_ = dbClient.Close()
 		}
 		os.Exit(0)
 	}
