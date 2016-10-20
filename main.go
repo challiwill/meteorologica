@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/challiwill/meteorologica/aws"
 	"github.com/challiwill/meteorologica/azure"
+	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/challiwill/meteorologica/db"
 	"github.com/challiwill/meteorologica/db/migrations"
 	"github.com/challiwill/meteorologica/gcp"
@@ -25,7 +26,11 @@ import (
 	"github.com/robfig/cron"
 )
 
-type Client interface{}
+type DBClient interface {
+	SaveReports(datamodels.Reports) error
+	GetUsageMonthToDate(datamodels.ReportIdentifier) (datamodels.UsageMonthToDate, error)
+	Close() error
+}
 
 var Config = struct {
 	Port int `default:"8080"`
@@ -75,7 +80,7 @@ func main() {
 		logrus.Fatalf("Failed to load configuration: %s", err.Error())
 	}
 	flag.Parse()
-	keepFile, saveToDB, resources := parseFlags()
+	resources := strings.Split(*resourcesFlag, ",")
 	log := configureLog()
 
 	sfTime, err := time.LoadLocation("America/Los_Angeles")
@@ -87,13 +92,16 @@ func main() {
 	}
 
 	// DB Client
-	var dbClient *db.Client
-	if saveToDB {
-		log.Debug("Migrating DB and Creating DB Client")
+	var dbClient DBClient
+	if *dbFlag {
+		log.Debug("Creating database client and running migrations...")
 		dbClient, err = migrations.LockDBAndMigrate(log, "mysql", Config.DB.Username, Config.DB.Password, Config.DB.Address, Config.DB.Name)
 		if err != nil {
 			log.Fatalf("database migration exited with error: %s", err.Error())
 		}
+		log.Debug("finished migrations")
+	} else {
+		dbClient = db.NewNullClient(log)
 	}
 
 	var iaasClients []usagedatajob.IaasClient
@@ -143,16 +151,11 @@ func main() {
 		if err != nil {
 			log.Fatal("Failed to create AWS credentials: ", err.Error())
 		}
-		var reportsDatabase aws.ReportsDatabase
-		reportsDatabase = dbClient
-		if dbClient == nil {
-			reportsDatabase = db.NewNullClient()
-		}
-		awsClient := aws.NewClient(log, sfTime, Config.AWS.Region, Config.AWS.BucketName, Config.AWS.MasterAccountNumber, s3.New(sess), reportsDatabase)
+		awsClient := aws.NewClient(log, sfTime, Config.AWS.Region, Config.AWS.BucketName, Config.AWS.MasterAccountNumber, s3.New(sess), dbClient)
 		iaasClients = append(iaasClients, awsClient)
 	}
 
-	usageDataJob := usagedatajob.NewJob(log, sfTime, iaasClients, dbClient, keepFile, saveToDB)
+	usageDataJob := usagedatajob.NewJob(log, sfTime, iaasClients, dbClient, *fileFlag)
 
 	c := cron.NewWithLocation(sfTime)
 	err = c.AddJob("@midnight", usageDataJob)
@@ -164,9 +167,7 @@ func main() {
 		c.Start()
 	} else {
 		usageDataJob.Run()
-		if dbClient != nil {
-			_ = dbClient.Close()
-		}
+		_ = dbClient.Close()
 		os.Exit(0)
 	}
 
@@ -180,11 +181,6 @@ func main() {
 		)
 	})
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(Config.Port), nil))
-}
-
-func parseFlags() (bool, bool, []string) {
-	resources := strings.Split(*resourcesFlag, ",")
-	return *fileFlag, *dbFlag, resources
 }
 
 func configureLog() *logrus.Logger {

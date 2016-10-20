@@ -138,10 +138,3 @@ func (c *Client) Close() error {
 
 	return c.Conn.Close()
 }
-
-func (c *Client) Ping() error {
-	c.Log.Debug("Entering db.Ping")
-	defer c.Log.Debug("Returning db.Ping")
-
-	return c.Conn.Ping()
-}

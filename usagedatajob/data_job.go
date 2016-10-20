@@ -31,7 +31,6 @@ type UsageDataJob struct {
 	IAASClients []IaasClient
 
 	saveFile bool
-	saveToDB bool
 	DBClient DBClient
 }
 
@@ -41,7 +40,6 @@ func NewJob(
 	iaasClients []IaasClient,
 	dbClient DBClient,
 	saveFile bool,
-	saveToDB bool,
 ) *UsageDataJob {
 	return &UsageDataJob{
 		log:      log,
@@ -51,7 +49,6 @@ func NewJob(
 		DBClient:    dbClient,
 
 		saveFile: saveFile,
-		saveToDB: saveToDB,
 	}
 }
 
@@ -79,14 +76,12 @@ func (j *UsageDataJob) Run() {
 			continue
 		}
 
-		if j.saveToDB {
-			j.log.Debugf("Saving %s data to database...", iaasClient.Name())
-			err = j.DBClient.SaveReports(normalizedData)
-			if err != nil {
-				j.log.Errorf("Failed to save %s usage data to the database: %s", iaasClient.Name(), err.Error())
-			} else {
-				j.log.Debugf("Saved %s data to database", iaasClient.Name())
-			}
+		j.log.Debugf("Saving %s data to database...", iaasClient.Name())
+		err = j.DBClient.SaveReports(normalizedData)
+		if err != nil {
+			j.log.Errorf("Failed to save %s usage data to the database: %s", iaasClient.Name(), err.Error())
+		} else {
+			j.log.Debugf("Saved %s data to database", iaasClient.Name())
 		}
 
 		if j.saveFile { // Append to file

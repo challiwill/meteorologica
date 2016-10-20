@@ -123,17 +123,4 @@ var _ = Describe("Client", func() {
 			})
 		})
 	})
-
-	Describe("Ping", func() {
-		It("pings the database", func() {
-			err := client.Ping()
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fakedb.PingCallCount()).To(Equal(1))
-		})
-	})
-
-	XDescribe("Migrate", func() {
-		It("works", func() {})
-	})
 })
