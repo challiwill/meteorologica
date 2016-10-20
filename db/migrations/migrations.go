@@ -6,4 +6,5 @@ var Migrations = []migration.Migrator{
 	InitialSchema,
 	LengthenIDs,
 	DoNotLimitLengthOfValues,
+	ForgotNotNull,
 }
