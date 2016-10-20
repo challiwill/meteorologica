@@ -17,7 +17,6 @@ FEATURES
 
 PERFORMANCE
 * can use streams of reading from csv and writing to database to do it all concurrently instead of in blocks
-* can use better types for slices of usages (eg in AWS) that have smarter methods for serching for duplicates
 * can we upload the billing information to the database as a load from file using the csv file.
 
 OTHER SERVICES

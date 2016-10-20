@@ -44,27 +44,20 @@ type Report struct {
 type Reports []Report
 
 func ConsolidateReports(reports Reports) Reports {
-	consolidatedReports := Reports{}
+	consolidatedReports := make(map[string]Report)
 	for _, r := range reports {
-		if i, found := find(consolidatedReports, r); found {
-			consolidatedReports[i] = sumReports(consolidatedReports[i], r)
+		if _, ok := consolidatedReports[r.ID]; ok {
+			consolidatedReports[r.ID] = sumReports(consolidatedReports[r.ID], r)
 			continue
 		}
-		consolidatedReports = append(consolidatedReports, r)
+		consolidatedReports[r.ID] = r
 	}
-	return consolidatedReports
-}
 
-// find returns a found report if account number and service type match
-// TODO it should probably use datamodels.ReportIdentifiers
-
-func find(haystack Reports, needle Report) (int, bool) {
-	for i, h := range haystack {
-		if h.ID == needle.ID {
-			return i, true
-		}
+	consolidatedReportsSlice := Reports{}
+	for _, v := range consolidatedReports {
+		consolidatedReportsSlice = append(consolidatedReportsSlice, v)
 	}
-	return 0, false
+	return consolidatedReportsSlice
 }
 
 func sumReports(one Report, two Report) Report {
