@@ -26,7 +26,7 @@ go run main.go -file
 By default the app collects data from GCP, AWS, and Azure.
 To collect billing data from only one (or more) IAAS you can pass the `-resources` flag, for example:
 ```
-go run main.go -resoruces=aws,gcp
+go run main.go -resources=aws,gcp
 ```
 
 All flags:
