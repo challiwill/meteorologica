@@ -110,7 +110,26 @@ db:
   address: hostname:port
   name: database-name
 ```
-The expected schema can be found from the `db/migrations/` directory.
+
+The recommended schema for the table is:
+```
++-----------------+--------------+------+-----+---------+-------+
+| Field           | Type         | Null | Key | Default | Extra |
++-----------------+--------------+------+-----+---------+-------+
+| id              | varchar(25)  | NO   | PRI | NULL    |       |
+| account_number  | varchar(255) | NO   |     | NULL    |       |
+| account_name    | varchar(255) | YES  |     | NULL    |       |
+| day             | tinyint(2)   | NO   |     | NULL    |       |
+| month           | tinyint(2)   | NO   |     | NULL    |       |
+| year            | smallint(4)  | NO   |     | NULL    |       |
+| service_type    | varchar(255) | NO   |     | NULL    |       |
+| region          | varchar(255) | YES  |     | NULL    |       |
+| resource        | varchar(255) | NO   |     | NULL    |       |
+| usage_quantity  | double       | NO   |     | NULL    |       |
+| unit_of_measure | varchar(255) | YES  |     | NULL    |       |
+| cost            | double       | NO   |     | NULL    |       |
++-----------------+--------------+------+-----+---------+-------+
+```
 
 ## Migrations
 Migrations are run when the app starts up.
