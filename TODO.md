@@ -14,10 +14,10 @@ CONFIGURATION
 
 FEATURES
 * extract each IAAS as a resource or something so that new resources can be added to calculate billing info from (eg Pagerduty)
+* get warning about inserting duplicate data
 
 PERFORMANCE
 * can use streams of reading from csv and writing to database to do it all concurrently instead of in blocks
-* can we upload the billing information to the database as a load from file using the csv file.
 
 OTHER SERVICES
 * configurable frontend as a micro service
