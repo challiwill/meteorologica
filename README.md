@@ -3,9 +3,11 @@ Tool to collect and standardize billing information from multiple IAAS's.
 Right now Google Cloud Platform, Amazon Web Services, and Microsoft Azure.
 
 Currently the default behavior is as follows:
-* Meteorologica collects billing information from the location where it is published (AWS bucket, GCP bucket, Azure API)
-* Meteorologica normalizes the data
-* Meteorologica inserts the data into the given MySQL database (right now this step can take a long time because it goes row by row)
+
+* For Each IAAS:
+  * Meteorologica collects billing information from the location where it is published (AWS bucket, GCP bucket, or Azure API)
+  * Meteorologica normalizes the data
+  * Meteorologica inserts the data into the given MySQL database (right now this step can take a long time because it goes row by row)
 
 *NB: Currently if a insert is made and there is a collision (same hash) the usage and cost will be updated to the new values*
 
@@ -22,9 +24,9 @@ go run main.go -file
 ```
 
 By default the app collects data from GCP, AWS, and Azure.
-To collect billing data from only one (or more) IAAS you can pass a flag (currently `-gcp`, `-azure`, or `-aws`), for example:
+To collect billing data from only one (or more) IAAS you can pass the `-resources` flag, for example:
 ```
-go run main.go -aws -gcp
+go run main.go -resoruces=aws,gcp
 ```
 
 All flags:
