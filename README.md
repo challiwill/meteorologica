@@ -9,7 +9,7 @@ Currently the default behavior is as follows:
   * Meteorologica normalizes the data
   * Meteorologica inserts the data into the given MySQL database (right now this step can take a long time because it goes row by row)
 
-*NB: Currently if a insert is made and there is a collision (same hash) the usage and cost will be updated to the new values*
+*NB: Currently if a insert is made and there is a collision (based on some id of max len 25 characters) the usage quantity and cost will be updated to the new values*
 
 ## Use
 You can use this tool to collect billing info from all your IAAS's just by running the file:

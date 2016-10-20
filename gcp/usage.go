@@ -3,6 +3,7 @@ package gcp
 import (
 	"hash/fnv"
 	"strconv"
+	"time"
 )
 
 type Usage struct {
@@ -28,6 +29,10 @@ type Usage struct {
 
 func (u Usage) Hash() string {
 	h := fnv.New64a()
-	h.Write([]byte(u.ProjectNumber + u.StartTime + u.Description + IAAS))
-	return strconv.FormatUint(uint64(h.Sum64()), 10)
+	h.Write([]byte(u.ProjectNumber + u.Description + IAAS))
+	t, err := time.Parse("2006-01-02T15:04:05-07:00", u.StartTime)
+	if err != nil {
+		t = time.Now()
+	}
+	return strconv.FormatUint(uint64(h.Sum64()), 10) + strconv.Itoa(t.Year()) + strconv.Itoa(int(t.Month())) + strconv.Itoa(t.Day())
 }

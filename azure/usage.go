@@ -41,6 +41,6 @@ type Usage struct {
 
 func (u Usage) Hash() string {
 	h := fnv.New64a()
-	h.Write([]byte(u.SubscriptionGuid + strconv.Itoa(u.Year) + strconv.Itoa(u.Month) + strconv.Itoa(u.Day) + u.ConsumedService + u.MeterRegion + IAAS))
-	return strconv.FormatUint(uint64(h.Sum64()), 10)
+	h.Write([]byte(u.SubscriptionGuid + u.ConsumedService + u.MeterRegion + IAAS))
+	return strconv.FormatUint(uint64(h.Sum64()), 10) + strconv.Itoa(u.Year) + strconv.Itoa(u.Month) + strconv.Itoa(u.Day)
 }
