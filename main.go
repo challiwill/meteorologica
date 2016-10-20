@@ -66,21 +66,28 @@ var Config = struct {
 }{}
 
 var (
-	resourcesFlag = flag.String("resources", "aws,gcp,azure", "A comma seperated list of resource to retrieve billing information from. If none are specified the default is AWS, GCP, and Azure")
-	cronFlag      = flag.Bool("cron", false, "Run job periodically every day at midnight")
-	verboseFlag   = flag.Bool("v", false, "Log at Debug level")
-	fileFlag      = flag.Bool("file", false, "Save a local copy of the data as a normalized CSV file")
-	dbFlag        = flag.Bool("db", true, "Save the data to the database")
+	resourcesFlag string
+	cronFlag      bool
+	verboseFlag   *bool
+	fileFlag      bool
+	dbFlag        bool
 )
 
 func main() {
+	flag.StringVar(&resourcesFlag, "resources", "aws,gcp,azure", "A comma seperated list of resource to retrieve billing information from. If none are specified the default is AWS, GCP, and Azure")
+	flag.BoolVar(&cronFlag, "cron", false, "Run job periodically every day at midnight")
+	verboseFlag = flag.Bool("v", false, "Log at Debug level")
+	flag.BoolVar(&fileFlag, "file", false, "Save a local copy of the data as a normalized CSV file")
+	flag.BoolVar(&dbFlag, "db", true, "Save the data to the database")
+	flag.Parse()
+	resources := strings.Split(resourcesFlag, ",")
+
 	_ = os.Setenv("CONFIGOR_ENV_PREFIX", "M")
 	err := configor.Load(&Config, "configuration/meteorologica.yml")
 	if err != nil {
 		logrus.Fatalf("Failed to load configuration: %s", err.Error())
 	}
-	flag.Parse()
-	resources := strings.Split(*resourcesFlag, ",")
+
 	log := configureLog()
 
 	sfTime, err := time.LoadLocation("America/Los_Angeles")
@@ -93,7 +100,7 @@ func main() {
 
 	// DB Client
 	var dbClient DBClient
-	if *dbFlag {
+	if dbFlag {
 		log.Debug("Creating database client and running migrations...")
 		dbClient, err = migrations.LockDBAndMigrate(log, "mysql", Config.DB.Username, Config.DB.Password, Config.DB.Address, Config.DB.Name)
 		if err != nil {
@@ -155,21 +162,20 @@ func main() {
 		iaasClients = append(iaasClients, awsClient)
 	}
 
-	usageDataJob := usagedatajob.NewJob(log, sfTime, iaasClients, dbClient, *fileFlag)
+	usageDataJob := usagedatajob.NewJob(log, sfTime, iaasClients, dbClient, fileFlag)
+
+	if !cronFlag {
+		usageDataJob.Run()
+		_ = dbClient.Close()
+		os.Exit(0)
+	}
 
 	c := cron.NewWithLocation(sfTime)
 	err = c.AddJob("@midnight", usageDataJob)
 	if err != nil {
 		log.Fatal("Could not create cron job: ", err.Error())
 	}
-
-	if *cronFlag {
-		c.Start()
-	} else {
-		usageDataJob.Run()
-		_ = dbClient.Close()
-		os.Exit(0)
-	}
+	c.Start()
 
 	// HEALTHCHECK
 	http.HandleFunc("/healthcheck", func(w http.ResponseWriter, r *http.Request) {
