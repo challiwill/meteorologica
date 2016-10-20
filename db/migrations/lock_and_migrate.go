@@ -47,7 +47,7 @@ func LockDBAndMigrate(log *logrus.Logger, sqlDriver, username, password, address
 			}
 			log.Debug("migration lock released")
 		}()
-		log.Info("migration lock acquired")
+		log.Debug("migration lock acquired")
 
 		dbClient, err := migration.OpenWith(sqlDriver, sqlDataSource, Migrations, mariadbGetVersion, mariadbSetVersion)
 		if err != nil {

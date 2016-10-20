@@ -101,12 +101,12 @@ func main() {
 	// DB Client
 	var dbClient DBClient
 	if dbFlag {
-		log.Debug("Creating database client and running migrations...")
+		log.Info("Creating database client and running migrations...")
 		dbClient, err = migrations.LockDBAndMigrate(log, "mysql", Config.DB.Username, Config.DB.Password, Config.DB.Address, Config.DB.Name)
 		if err != nil {
-			log.Fatalf("database migration exited with error: %s", err.Error())
+			log.Fatalf("Database migration exited with error: %s", err.Error())
 		}
-		log.Debug("finished migrations")
+		log.Info("Finished migrations")
 	} else {
 		dbClient = db.NewNullClient(log)
 	}
