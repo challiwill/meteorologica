@@ -33,8 +33,8 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 
 		reports = append(reports, datamodels.Report{
 			ID:            usage.Hash(),
-			AccountNumber: usage.ProjectNumber,
-			AccountName:   usage.ProjectID,
+			AccountNumber: usage.ProjectID,
+			AccountName:   usage.ProjectName,
 			Day:           t.Day(),
 			Month:         t.Month(),
 			Year:          t.Year(),
