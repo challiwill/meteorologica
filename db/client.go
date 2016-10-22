@@ -69,7 +69,6 @@ func (c *Client) SaveReports(reports datamodels.Reports) error {
 		INSERT INTO resource_billing
 		(id, account_number, account_name, day, month, year, service_type, region, resource, usage_quantity, unit_of_measure, cost)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE usage_quantity=VALUES(usage_quantity), cost=VALUES(cost)
 		`, r.ID, r.AccountNumber, r.AccountName, r.Day, r.Month, r.Year, r.ServiceType, r.Region, r.Resource, r.UsageQuantity, r.UnitOfMeasure, r.Cost)
 		if err != nil {
 			c.Log.Warn("Failed to save report to database: ", err.Error())
