@@ -1,4 +1,0 @@
-#!/bin/bash
-
-CONFIGOR_ENV=local go run main.go -v -migrate
-

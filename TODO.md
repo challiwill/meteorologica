@@ -11,6 +11,7 @@ CONFIGURATION
 * merge flags with configuration struct
 * properly get DB credentials from env
 * 'last job ran' should be stored in DB
+* should I be using PORT env var
 
 FEATURES
 * extract each IAAS as a resource or something so that new resources can be added to calculate billing info from (eg Pagerduty)
