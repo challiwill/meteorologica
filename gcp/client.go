@@ -129,31 +129,6 @@ func (c Client) DailyUsageReport(day int) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
-func (c Client) PublishFileToBucket(name string) error {
-	c.Log.Debug("Entering gcp.PublishFileToBucket")
-	defer c.Log.Debug("Returning gcp.PublishFileToBucket")
-
-	object := &storage.Object{
-		Name:        name,
-		ContentType: "text/csv",
-	}
-	file, err := os.Open(name)
-	defer file.Close()
-	if err != nil {
-		c.Log.Errorf("Failed to open normalized file: %s", name)
-		return err
-	}
-
-	res, err := c.StorageService.Insert(c.BucketName, object, file)
-	if err != nil {
-		c.Log.Errorf("Objects.Insert to bucket '%s' failed", c.BucketName)
-		return err
-	}
-	c.Log.Infof("Created object %v at location %v", res.Name, res.SelfLink)
-
-	return nil
-}
-
 func (c Client) dailyBillingFileName(day int) string {
 	year, month, _ := time.Now().In(c.Location).Date()
 	monthStr := padMonth(month)

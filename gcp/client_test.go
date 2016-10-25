@@ -148,9 +148,4 @@ but really, we, know, you, want, CSV
 			})
 		})
 	})
-
-	Describe("PublishFileToBucket", func() {
-		// Probably getting rid of this feature anyway so ...
-		XIt("works", func() {})
-	})
 })

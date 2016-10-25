@@ -16,10 +16,6 @@ type IaasClient interface {
 	GetNormalizedUsage() (datamodels.Reports, error)
 }
 
-type BucketClient interface {
-	PublishFileToBucket(string) error
-}
-
 type DBClient interface {
 	SaveReports(datamodels.Reports) error
 }
