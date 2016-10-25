@@ -114,7 +114,7 @@ The recommended schema for the table is:
 +-----------------+--------------+------+-----+---------+-------+
 | Field           | Type         | Null | Key | Default | Extra |
 +-----------------+--------------+------+-----+---------+-------+
-| id              | varchar(25)  | NO   | PRI | NULL    |       |
+| id              | varchar(30)  | NO   | PRI | NULL    |       |
 | account_number  | varchar(255) | NO   |     | NULL    |       |
 | account_name    | varchar(255) | YES  |     | NULL    |       |
 | day             | tinyint(2)   | NO   |     | NULL    |       |
