@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+check_installed() {
+  if ! command -v $1 > /dev/null 2>&1; then
+    printf "$1 must be installed before running this script!"
+    exit 1
+  fi
+}
+
+check_installed cf
+check_installed lpass
+
+cf set-env meteorologica CONFIGOR_ENV production
+mkdir -p configuration/
+lpass show "meteorologica-configuration" --notes >> configuration/meteorologica.yml
+lpass show "meteorologica-gcp-credentials" --notes >> configuration/gcp.json
+
+cf push
+
+rm -f configuration/gcp.json
+rm -f configuration/meteorologica.yml
