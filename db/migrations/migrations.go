@@ -7,4 +7,5 @@ var Migrations = []migration.Migrator{
 	LengthenIDs,
 	DoNotLimitLengthOfValues,
 	ForgotNotNull,
+	LengthenIDsAgain,
 }
