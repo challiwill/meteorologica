@@ -25,20 +25,13 @@ func (n *Normalizer) Normalize(usageReports []*Usage) datamodels.Reports {
 
 	var reports datamodels.Reports
 	for _, usage := range usageReports {
-		usage.TimeFetched = time.Now().In(n.location)
-		t, err := time.Parse("2006-01-02T15:04:05-07:00", usage.StartTime)
-		if err != nil {
-			n.log.Warnf("Could not parse time '%s', defaulting to today '%s'\n", usage.StartTime, time.Now().In(n.location).String())
-			t = usage.TimeFetched
-		}
-
 		reports = append(reports, datamodels.Report{
 			ID:            usage.Hash(),
 			AccountNumber: usage.ProjectID,
 			AccountName:   usage.ProjectName,
-			Day:           t.Day(),
-			Month:         t.Month(),
-			Year:          t.Year(),
+			Day:           usage.TimeFetched.Day(),
+			Month:         usage.TimeFetched.Month(),
+			Year:          usage.TimeFetched.Year(),
 			ServiceType:   usage.Description,
 			UsageQuantity: usage.Measurement1TotalConsumption,
 			Cost:          usage.Cost,

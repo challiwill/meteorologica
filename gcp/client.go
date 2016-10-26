@@ -85,6 +85,7 @@ func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 			c.Log.Errorf("Failed to parse GCP usage for day: %d %s: %s", i+1, time.Now().In(c.Location).Month().String(), err.Error())
 			continue
 		}
+		dailyReport = c.setDate(dailyReport, i+1)
 		monthlyReport = append(monthlyReport, dailyReport...)
 	}
 	if len(monthlyReport) == 0 {
@@ -150,4 +151,12 @@ func padDay(day int) string {
 		return "0" + d
 	}
 	return d
+}
+
+func (c Client) setDate(usages []*Usage, day int) []*Usage {
+	year, month, _ := time.Now().In(c.Location).Date()
+	for i, _ := range usages {
+		usages[i].TimeFetched = time.Date(year, month, day, 1, 1, 1, 1, c.Location)
+	}
+	return usages
 }
