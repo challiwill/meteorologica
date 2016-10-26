@@ -13,8 +13,8 @@ check_installed lpass
 
 cf set-env meteorologica CONFIGOR_ENV production
 mkdir -p configuration/
-lpass show "meteorologica-configuration" --notes >> configuration/meteorologica.yml
-lpass show "meteorologica-gcp-credentials" --notes >> configuration/gcp.json
+lpass show "meteorologica-configuration" --notes > configuration/meteorologica.yml
+lpass show "meteorologica-gcp-credentials" --notes > configuration/gcp.json
 
 cf push
 
