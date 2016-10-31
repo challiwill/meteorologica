@@ -136,4 +136,4 @@ All other app instances will wait for the lock then exit the migrations with a n
 Migrations are run from the `db/migrations/migrations.go` file as defined in the same directory.
 
 ## Timeline
-I am keeping a running list of tasks to accomplish in the [TODO](TODO.md) file.
+Take a look at the Wiki to see the [Next Steps](https://github.com/challiwill/meteorologica/wiki/Meteorologica-TODO) and [Future Services](https://github.com/challiwill/meteorologica/wiki/Where-are-we-going%3F).
