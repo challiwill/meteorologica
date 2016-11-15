@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-func YesterdaysMonthAndYear(location *time.Location) (int, time.Month) {
+func YesterdaysDate(location *time.Location) (int, time.Month, int) {
 	year, month, day := time.Now().In(location).Date()
 	yesterday := time.Date(year, month, day-1, 0, 0, 0, 0, location)
-	return yesterday.Year(), yesterday.Month()
+	return yesterday.Year(), yesterday.Month(), yesterday.Day()
 }
 
 func PadMonth(month time.Month) string {

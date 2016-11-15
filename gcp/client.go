@@ -104,8 +104,9 @@ func (c Client) GetBillingData() (DetailedUsageReport, error) {
 	defer c.Log.Debug("Returning gcp.GetBillingData")
 
 	monthlyUsageReport := DetailedUsageReport{}
-	for i := 1; i < time.Now().In(c.Location).Day(); i++ {
-		dailyUsage, err := c.DailyUsageReport(i)
+	year, month, day := resources.YesterdaysDate(c.Location)
+	for i := 1; i < day; i++ {
+		dailyUsage, err := c.DailyUsageReport(year, month, i)
 		if err != nil {
 			c.Log.Warnf("Failed to get GCP Daily Usage for %s, %d: %s", time.Now().In(c.Location).Month().String(), i, err.Error())
 			continue
@@ -115,11 +116,11 @@ func (c Client) GetBillingData() (DetailedUsageReport, error) {
 	return monthlyUsageReport, nil
 }
 
-func (c Client) DailyUsageReport(day int) ([]byte, error) {
+func (c Client) DailyUsageReport(year int, month time.Month, day int) ([]byte, error) {
 	c.Log.Debug("Entering gcp.DailyUsageReport")
 	defer c.Log.Debug("Returning gcp.DailyUsageReport")
 
-	resp, err := c.StorageService.DailyUsage(c.BucketName, c.dailyBillingFileName(day))
+	resp, err := c.StorageService.DailyUsage(c.BucketName, c.dailyBillingFileName(year, month, day))
 	if err != nil {
 		return nil, errare.NewRequestError(err, IAAS)
 	}
@@ -131,8 +132,7 @@ func (c Client) DailyUsageReport(day int) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
-func (c Client) dailyBillingFileName(day int) string {
-	year, month, _ := time.Now().In(c.Location).Date()
+func (c Client) dailyBillingFileName(year int, month time.Month, day int) string {
 	monthStr := resources.PadMonth(month)
 	dayStr := padDay(day)
 	return url.QueryEscape(strings.Join([]string{"Billing", strconv.Itoa(year), monthStr, dayStr}, "-") + ".csv")
@@ -147,9 +147,9 @@ func padDay(day int) string {
 }
 
 func (c Client) setDate(usages []*Usage, day int) []*Usage {
-	year, month, _ := time.Now().In(c.Location).Date()
+	year, month, _ := resources.YesterdaysDate(c.Location)
 	for i, _ := range usages {
-		usages[i].TimeFetched = time.Date(year, month, day, 1, 1, 1, 1, c.Location)
+		usages[i].TimeFetched = time.Date(year, month, day, 0, 0, 0, 0, c.Location)
 	}
 	return usages
 }

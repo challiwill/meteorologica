@@ -75,7 +75,7 @@ func (c Client) GetBillingData() ([]byte, error) {
 	c.log.Debug("Entering azure.GetBillingData")
 	defer c.log.Debug("Returning azure.GetBillingData")
 
-	year, month := resources.YesterdaysMonthAndYear(c.location)
+	year, month, _ := resources.YesterdaysDate(c.location)
 	reqString := strings.Join([]string{c.URL, "rest", strconv.Itoa(c.enrollment), fmt.Sprintf("usage-report?month=%d-%s&type=detail", year, resources.PadMonth(month))}, "/")
 	c.log.Debug("Making Azure billing request to address: ", reqString)
 

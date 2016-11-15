@@ -59,7 +59,7 @@ var _ = Describe("Gcp", func() {
 		)
 
 		JustBeforeEach(func() {
-			report, err = client.DailyUsageReport(day)
+			report, err = client.DailyUsageReport(time.Now().Year(), time.Now().Month(), day)
 		})
 
 		Context("when the storage service returns a successful response", func() {

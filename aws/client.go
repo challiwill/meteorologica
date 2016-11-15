@@ -131,7 +131,7 @@ func (c Client) CalculateDailyUsages(reports datamodels.Reports) (datamodels.Rep
 }
 
 func (c Client) monthlyBillingFileName() string {
-	year, month := resources.YesterdaysMonthAndYear(c.location)
+	year, month, _ := resources.YesterdaysDate(c.location)
 	monthStr := resources.PadMonth(month)
 	return url.QueryEscape(strings.Join([]string{strconv.FormatInt(c.AccountNumber, 10), "aws", "billing", "csv", strconv.Itoa(year), monthStr}, "-") + ".csv")
 }
