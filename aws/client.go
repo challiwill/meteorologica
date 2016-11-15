@@ -15,6 +15,7 @@ import (
 	"github.com/challiwill/meteorologica/csv"
 	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/challiwill/meteorologica/errare"
+	"github.com/challiwill/meteorologica/resources"
 )
 
 var IAAS = "AWS"
@@ -130,21 +131,7 @@ func (c Client) CalculateDailyUsages(reports datamodels.Reports) (datamodels.Rep
 }
 
 func (c Client) monthlyBillingFileName() string {
-	year, month := yesterdaysMonthAndYear(c.location)
-	monthStr := padMonth(month)
+	year, month := resources.YesterdaysMonthAndYear(c.location)
+	monthStr := resources.PadMonth(month)
 	return url.QueryEscape(strings.Join([]string{strconv.FormatInt(c.AccountNumber, 10), "aws", "billing", "csv", strconv.Itoa(year), monthStr}, "-") + ".csv")
-}
-
-func yesterdaysMonthAndYear(location *time.Location) (int, time.Month) {
-	year, month, day := time.Now().In(location).Date()
-	yesterday := time.Date(year, month, day-1, 0, 0, 0, 0, location)
-	return yesterday.Year(), yesterday.Month()
-}
-
-func padMonth(month time.Month) string {
-	m := strconv.Itoa(int(month))
-	if month < 10 {
-		return "0" + m
-	}
-	return m
 }

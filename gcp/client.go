@@ -14,6 +14,7 @@ import (
 	"github.com/challiwill/meteorologica/csv"
 	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/challiwill/meteorologica/errare"
+	"github.com/challiwill/meteorologica/resources"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -132,17 +133,9 @@ func (c Client) DailyUsageReport(day int) ([]byte, error) {
 
 func (c Client) dailyBillingFileName(day int) string {
 	year, month, _ := time.Now().In(c.Location).Date()
-	monthStr := padMonth(month)
+	monthStr := resources.PadMonth(month)
 	dayStr := padDay(day)
 	return url.QueryEscape(strings.Join([]string{"Billing", strconv.Itoa(year), monthStr, dayStr}, "-") + ".csv")
-}
-
-func padMonth(month time.Month) string {
-	m := strconv.Itoa(int(month))
-	if month < 10 {
-		return "0" + m
-	}
-	return m
 }
 
 func padDay(day int) string {
