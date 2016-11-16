@@ -12,10 +12,10 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/challiwill/meteorologica/calendar"
 	"github.com/challiwill/meteorologica/csv"
 	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/challiwill/meteorologica/errare"
-	"github.com/challiwill/meteorologica/resources"
 )
 
 var IAAS = "AWS"
@@ -131,7 +131,7 @@ func (c Client) CalculateDailyUsages(reports datamodels.Reports) (datamodels.Rep
 }
 
 func (c Client) monthlyBillingFileName() string {
-	year, month, _ := resources.YesterdaysDate(c.location)
-	monthStr := resources.PadMonth(month)
+	year, month, _ := calendar.YesterdaysDate(c.location)
+	monthStr := calendar.PadMonth(month)
 	return url.QueryEscape(strings.Join([]string{strconv.FormatInt(c.AccountNumber, 10), "aws", "billing", "csv", strconv.Itoa(year), monthStr}, "-") + ".csv")
 }

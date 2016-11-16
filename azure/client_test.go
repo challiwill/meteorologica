@@ -7,7 +7,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	. "github.com/challiwill/meteorologica/azure"
-	"github.com/challiwill/meteorologica/resources"
+	"github.com/challiwill/meteorologica/calendar"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -54,7 +54,7 @@ var _ = Describe("Azure", func() {
 			BeforeEach(func() {
 				azureServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/rest/1337/usage-report", fmt.Sprintf("month=%d-%s&type=detail", time.Now().Year(), resources.PadMonth(time.Now().Month()))),
+						ghttp.VerifyRequest("GET", "/rest/1337/usage-report", fmt.Sprintf("month=%d-%s&type=detail", time.Now().Year(), calendar.PadMonth(time.Now().Month()))),
 						ghttp.VerifyHeaderKV("authorization", "bearer some-key"),
 						ghttp.VerifyHeaderKV("api-version", "1.0"),
 						ghttp.RespondWith(http.StatusOK, monthlyUsageResponse),
@@ -79,7 +79,7 @@ var _ = Describe("Azure", func() {
 			BeforeEach(func() {
 				azureServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/rest/1337/usage-report", fmt.Sprintf("month=%d-%s&type=detail", time.Now().Year(), resources.PadMonth(time.Now().Month()))),
+						ghttp.VerifyRequest("GET", "/rest/1337/usage-report", fmt.Sprintf("month=%d-%s&type=detail", time.Now().Year(), calendar.PadMonth(time.Now().Month()))),
 						ghttp.VerifyHeaderKV("authorization", "bearer some-key"),
 						ghttp.VerifyHeaderKV("api-version", "1.0"),
 						ghttp.RespondWith(http.StatusInternalServerError, ""),

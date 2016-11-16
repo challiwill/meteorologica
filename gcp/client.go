@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/challiwill/meteorologica/calendar"
 	"github.com/challiwill/meteorologica/csv"
 	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/challiwill/meteorologica/errare"
-	"github.com/challiwill/meteorologica/resources"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -104,7 +104,7 @@ func (c Client) GetBillingData() (DetailedUsageReport, error) {
 	defer c.Log.Debug("Returning gcp.GetBillingData")
 
 	monthlyUsageReport := DetailedUsageReport{}
-	year, month, day := resources.YesterdaysDate(c.Location)
+	year, month, day := calendar.YesterdaysDate(c.Location)
 	for i := 1; i < day; i++ {
 		dailyUsage, err := c.DailyUsageReport(year, month, i)
 		if err != nil {
@@ -133,7 +133,7 @@ func (c Client) DailyUsageReport(year int, month time.Month, day int) ([]byte, e
 }
 
 func (c Client) dailyBillingFileName(year int, month time.Month, day int) string {
-	monthStr := resources.PadMonth(month)
+	monthStr := calendar.PadMonth(month)
 	dayStr := padDay(day)
 	return url.QueryEscape(strings.Join([]string{"Billing", strconv.Itoa(year), monthStr, dayStr}, "-") + ".csv")
 }
@@ -147,7 +147,7 @@ func padDay(day int) string {
 }
 
 func (c Client) setDate(usages []*Usage, day int) []*Usage {
-	year, month, _ := resources.YesterdaysDate(c.Location)
+	year, month, _ := calendar.YesterdaysDate(c.Location)
 	for i, _ := range usages {
 		usages[i].TimeFetched = time.Date(year, month, day, 0, 0, 0, 0, c.Location)
 	}

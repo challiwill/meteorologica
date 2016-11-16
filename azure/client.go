@@ -11,10 +11,10 @@ import (
 	"io/ioutil"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/challiwill/meteorologica/calendar"
 	"github.com/challiwill/meteorologica/csv"
 	"github.com/challiwill/meteorologica/datamodels"
 	"github.com/challiwill/meteorologica/errare"
-	"github.com/challiwill/meteorologica/resources"
 )
 
 var IAAS = "Azure"
@@ -75,8 +75,8 @@ func (c Client) GetBillingData() ([]byte, error) {
 	c.log.Debug("Entering azure.GetBillingData")
 	defer c.log.Debug("Returning azure.GetBillingData")
 
-	year, month, _ := resources.YesterdaysDate(c.location)
-	reqString := strings.Join([]string{c.URL, "rest", strconv.Itoa(c.enrollment), fmt.Sprintf("usage-report?month=%d-%s&type=detail", year, resources.PadMonth(month))}, "/")
+	year, month, _ := calendar.YesterdaysDate(c.location)
+	reqString := strings.Join([]string{c.URL, "rest", strconv.Itoa(c.enrollment), fmt.Sprintf("usage-report?month=%d-%s&type=detail", year, calendar.PadMonth(month))}, "/")
 	c.log.Debug("Making Azure billing request to address: ", reqString)
 
 	req, err := http.NewRequest("GET", reqString, nil)
