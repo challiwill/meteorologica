@@ -58,6 +58,27 @@ func (c Client) Name() string {
 	return IAAS
 }
 
+func (c Client) GetDailyNormalizedUsage(date time.Time) (datamodels.Reports, error) {
+	if !yesterday(date, c.location) && !lastDayOfMonth(date, c.location) {
+		return nil, fmt.Errorf("Cannot get usage for date: %s", date.String())
+	}
+	return nil, nil
+}
+
+func yesterday(date time.Time, location *time.Location) bool {
+	year, month, day := date.Date()
+	testDate := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day()-1, 0, 0, 0, 0, location)
+	testYear, testMonth, testDay := testDate.Date()
+	return year == testYear && month == testMonth && day == testDay
+}
+
+func lastDayOfMonth(date time.Time, location *time.Location) bool {
+	year, month, day := date.Date()
+	testDate := time.Date(year, month, day+1, 0, 0, 0, 0, location)
+	_, testMonth, _ := testDate.Date()
+	return month != testMonth
+}
+
 func (c Client) GetNormalizedUsage() (datamodels.Reports, error) {
 	c.log.Info("Getting Monthly AWS Usage...")
 	c.log.Debug("Entering aws.GetNormalizedUsage")

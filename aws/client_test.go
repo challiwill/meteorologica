@@ -44,6 +44,67 @@ var _ = Describe("Client", func() {
 		})
 	})
 
+	FDescribe("GetDailyNormalizedUsage", func() {
+		var (
+			reports datamodels.Reports
+			err     error
+			date    time.Time
+		)
+
+		JustBeforeEach(func() {
+			reports, err = client.GetDailyNormalizedUsage(date)
+		})
+
+		Context("given a date from this month", func() {
+			Context("when it is yesterday", func() {
+				BeforeEach(func() {
+					d := time.Now()
+					date = time.Date(d.Year(), d.Month(), d.Day()-1, 0, 0, 0, 0, time.Now().Location())
+				})
+
+				It("works", func() {
+					Expect(err).NotTo(HaveOccurred())
+				})
+			})
+
+			Context("when it is from a more previous day", func() {
+				BeforeEach(func() {
+					// TODO this should be tested better, it will fail depending on the day it's run
+					d := time.Now()
+					date = time.Date(d.Year(), d.Month(), 2, 0, 0, 0, 0, time.Now().Location())
+				})
+
+				It("returns a helpful error", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Cannot get usage for date"))
+				})
+			})
+		})
+
+		Context("given a date from a previous month", func() {
+			Context("when it is the last day of the month", func() {
+				BeforeEach(func() {
+					date = time.Date(2016, time.October, 31, 0, 0, 0, 0, time.Now().Location())
+				})
+
+				It("works", func() {
+					Expect(err).NotTo(HaveOccurred())
+				})
+			})
+
+			Context("when it is not the last day of the month", func() {
+				BeforeEach(func() {
+					date = time.Date(2016, time.October, 12, 0, 0, 0, 0, time.Now().Location())
+				})
+
+				It("returns a helpful error", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Cannot get usage for date"))
+				})
+			})
+		})
+	})
+
 	XDescribe("GetNormalizedUsage", func() {
 		It("works", func() {})
 	})
