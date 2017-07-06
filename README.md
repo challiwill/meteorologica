@@ -48,7 +48,7 @@ You can access it at [/healthcheck](http://meteorologica.cfapps.io/healthcheck).
 
 Metrics and logs available at [https://metrics.run.pivotal.io](https://metrics.run.pivotal.io)
 
-##Environment Needed:
+## Environment Needed:
 Be careful not to upload any credentials to Github as this repository is Public.
 
 To set the environment between `production`, or the default `development` set the environment variable
@@ -63,7 +63,7 @@ If setting an environment variable it is all caps, and of the form `M_SERVICE_VA
 and `VARIABLE` is the value that needs to get conveyed as described below, where camel case is translated to underscore separated (eg: `M_AZURE_ACCESS_KEY=my-access-key`).
 If creating a `.yml` configuration file set the variables as shown below.
 
-###GCP:
+### GCP:
 You need to generate and download a
 [service_account_credential](https://cloud.google.com/storage/docs/authentication#service_accounts).
 Provide a path to the file as a variable.
@@ -78,7 +78,7 @@ gcp:
   storage-bucket-name: my-final-bucket
 ```
 
-###AWS:
+### AWS:
 You need to provide credentials and configuration options.
 The master account number is the account number for the billing management account.
 ``` yml
@@ -91,7 +91,7 @@ aws:
 ```
 
 
-###Azure:
+### Azure:
 You need to provide the API Access Key and your Enrollment Number.
 ``` yml
 azure:
